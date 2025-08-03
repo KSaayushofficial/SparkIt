@@ -1,103 +1,189 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import VerticalSidebar from "@/components/dashboard/VerticalSidebar";
+import HomeSection from "@/components/dashboard/sections/HomeSection";
+import TodoSection from "@/components/dashboard/sections/TodoSection";
+import MusicSection from "@/components/dashboard/sections/MusicSection";
+import FitnessSection from "@/components/dashboard/sections/FitnessSection";
+import StressSection from "@/components/dashboard/sections/StressSection";
+import BackgroundSection from "@/components/dashboard/sections/BackgroundSection";
+import EffectsSection from "@/components/dashboard/sections/EffectsSection";
+import BackgroundManager from "@/components/background/BackgroundManager";
+import EffectsManager from "@/components/dashboard/effects/EffectsManager";
+import type { Todo, Notification } from "@/components/dashboard/types";
+
+export default function Dashboard() {
+  const [activeSection, setActiveSection] = useState("home");
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    const savedTodos = localStorage.getItem("dashboard-todos");
+    if (savedTodos) {
+      setTodos(JSON.parse(savedTodos));
+    }
+
+    // Initialize the global systems
+    initializeGlobalSystems();
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("dashboard-todos", JSON.stringify(todos));
+  }, [todos]);
+
+  const initializeGlobalSystems = () => {
+    // Remove any existing containers to prevent duplicates
+    const existingBackground = document.getElementById(
+      "global-background-container"
+    );
+    const existingEffects = document.getElementById("global-effects-container");
+
+    if (existingBackground) existingBackground.remove();
+    if (existingEffects) existingEffects.remove();
+
+    // Create global background container
+    const backgroundContainer = document.createElement("div");
+    backgroundContainer.id = "global-background-container";
+    backgroundContainer.className = "fixed inset-0 z-0";
+    backgroundContainer.style.pointerEvents = "none";
+    document.body.appendChild(backgroundContainer);
+
+    // Create global effects container
+    const effectsContainer = document.createElement("div");
+    effectsContainer.id = "global-effects-container";
+    effectsContainer.className = "fixed inset-0 z-10 pointer-events-none";
+    effectsContainer.style.mixBlendMode = "screen";
+    document.body.appendChild(effectsContainer);
+
+    // Initialize background and effects
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("initializeBackground"));
+      window.dispatchEvent(new CustomEvent("initializeEffects"));
+    }, 100);
+  };
+
+  const addNotification = (
+    notification: Omit<Notification, "id" | "timestamp">
+  ) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: Date.now().toString(),
+      timestamp: new Date(),
+    };
+    setNotifications((prev) => [...prev, newNotification]);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      setNotifications((prev) =>
+        prev.filter((n) => n.id !== newNotification.id)
+      );
+    }, 5000);
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  const renderSection = () => {
+    switch (activeSection) {
+      case "home":
+        return <HomeSection todos={todos} onNotification={addNotification} />;
+      case "todo":
+        return (
+          <TodoSection
+            todos={todos}
+            setTodos={setTodos}
+            onNotification={addNotification}
+          />
+        );
+      case "music":
+        return <MusicSection onNotification={addNotification} />;
+      case "fitness":
+        return <FitnessSection onNotification={addNotification} />;
+      case "stress":
+        return <StressSection onNotification={addNotification} />;
+      case "background":
+        return <BackgroundSection onNotification={addNotification} />;
+      case "effects":
+        return <EffectsSection onNotification={addNotification} />;
+      default:
+        return <HomeSection todos={todos} onNotification={addNotification} />;
+    }
+  };
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Global Background Manager */}
+      <BackgroundManager />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      {/* Global Effects Manager */}
+      <EffectsManager />
+
+      {/* Main Layout */}
+      <div className="relative z-20 flex h-screen">
+        {/* Sidebar */}
+        <VerticalSidebar
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+        />
+
+        {/* Main Content */}
+        <main className="flex-1 p-6 overflow-hidden">
+          <div className="h-full relative z-10">{renderSection()}</div>
+        </main>
+      </div>
+
+      {/* Notifications */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {notifications.map((notification) => (
+          <div
+            key={notification.id}
+            className={`p-4 rounded-lg backdrop-blur-md border shadow-lg max-w-sm transition-all duration-300 ${
+              notification.type === "alarm"
+                ? "bg-red-500/90 border-red-400 text-white"
+                : notification.type === "success"
+                ? "bg-green-500/90 border-green-400 text-white"
+                : notification.type === "warning"
+                ? "bg-yellow-500/90 border-yellow-400 text-white"
+                : "bg-blue-500/90 border-blue-400 text-white"
+            }`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h4 className="font-semibold text-sm">{notification.title}</h4>
+                <p className="text-sm opacity-90 mt-1">
+                  {notification.message}
+                </p>
+              </div>
+              <button
+                onClick={() => removeNotification(notification.id)}
+                className="ml-2 text-white/70 hover:text-white transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            {notification.type === "alarm" && (
+              <button
+                onClick={() => removeNotification(notification.id)}
+                className="mt-2 px-3 py-1 bg-white/20 rounded text-sm hover:bg-white/30 transition-colors"
+              >
+                Cancel Alarm
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
