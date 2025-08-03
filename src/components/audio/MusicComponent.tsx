@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import MusicPlayer from "./MusicPlayer";
 import { debounce } from "lodash";
+import { Minimize2, X, Music } from "lucide-react";
 
 interface Track {
   id: string;
@@ -17,14 +18,16 @@ export default function MusicComponent() {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Actual API call function
+  const [minimized, setMinimized] = useState(false);
+  const [closed, setClosed] = useState(false);
+  if (closed) return null;
+
   const searchTracks = async (searchTerm: string) => {
     if (!searchTerm.trim()) {
       setTracks([]);
       setShowModal(false);
       return;
     }
-
     try {
       const res = await fetch(
         `/api/music/search?query=${encodeURIComponent(searchTerm)}`
@@ -42,7 +45,6 @@ export default function MusicComponent() {
     }
   };
 
-  // Debounced version of search
   const debouncedSearch = useCallback(
     debounce((term: string) => {
       searchTracks(term);
@@ -50,7 +52,6 @@ export default function MusicComponent() {
     []
   );
 
-  // Input handler passed to MusicPlayer
   const handleSearchInput = (term: string) => {
     setQuery(term);
     debouncedSearch(term);
@@ -61,27 +62,110 @@ export default function MusicComponent() {
     setShowModal(false);
   };
 
+  const logoSize = 48;
+
   return (
     <>
-      {/* Music Player */}
-      <div className="flex items-end justify-center min-h-screen p-4 relative">
-        <MusicPlayer
-          title={selectedTrack?.title || "Search and Select a Song"}
-          artist={selectedTrack?.channel || ""}
-          cover={selectedTrack?.thumbnail || ""}
-          previewUrl={selectedTrack?.id || ""}
-          onSearch={handleSearchInput}
-        />
+      <div
+        className={`fixed bottom-4 right-4 z-50 bg-white/10 backdrop-blur-lg border border-white/30 rounded-2xl shadow-lg
+          transition-all duration-300 ease-in-out overflow-hidden box-border
+          flex flex-col items-center justify-center
+          ${
+            minimized
+              ? `w-${logoSize} h-${logoSize} p-1 cursor-pointer`
+              : "w-[450px] p-4 cursor-default"
+          }
+        `}
+        onClick={() => {
+          if (minimized) setMinimized(false);
+        }}
+      >
+        {/* Top controls only when maximized */}
+        {!minimized && (
+          <div className="flex justify-end items-center gap-2 mb-2 select-none w-full">
+            {selectedTrack && (
+              <div className="flex items-center gap-2 truncate max-w-[240px] text-white font-semibold text-sm">
+                <img
+                  src={selectedTrack.thumbnail}
+                  alt={selectedTrack.title}
+                  className="w-6 h-6 rounded-lg object-cover"
+                />
+                <span className="truncate">{selectedTrack.title}</span>
+              </div>
+            )}
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMinimized(true);
+              }}
+              className="text-white hover:text-pink-400 p-1 rounded"
+              aria-label="Minimize music player"
+              title="Minimize"
+            >
+              <Minimize2 size={18} />
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setClosed(true);
+              }}
+              className="text-white hover:text-red-500 p-1 rounded"
+              aria-label="Close music player"
+              title="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* Always render MusicPlayer */}
+        <div
+          className={`w-full transition-all duration-300 ${
+            minimized
+              ? "opacity-0 pointer-events-none h-0 overflow-hidden"
+              : "opacity-100 h-auto"
+          }`}
+        >
+          <MusicPlayer
+            title={selectedTrack?.title || "Search and Select a Song"}
+            artist={selectedTrack?.channel || ""}
+            cover={selectedTrack?.thumbnail || ""}
+            previewUrl={selectedTrack?.id || ""}
+            onSearch={handleSearchInput}
+          />
+        </div>
+
+        {/* Minimized logo overlay */}
+        {minimized && (
+          <div className="absolute flex items-center justify-center w-[120px] h-[120px]  rounded-full overflow-hidden shadow-lg cursor-pointer select-none">
+            {selectedTrack ? (
+              <img
+                src={selectedTrack.thumbnail}
+                alt={selectedTrack.title}
+                className="w-full h-full object-cover"
+                draggable={false}
+                title={selectedTrack.title}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white bg-gray-700">
+                <Music size={24} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Track Modal */}
       {showModal && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 w-[360px] max-h-[300px] overflow-hidden rounded-2xl bg-white/10 backdrop-blur-lg border border-white/30 shadow-2xl text-white transition-all duration-300 animate-fade-in">
+        <div className="fixed bottom-20 right-4 z-50 w-[360px] max-h-[300px] overflow-hidden rounded-2xl bg-white/10 backdrop-blur-lg border border-white/30 shadow-2xl text-white transition-all duration-300 animate-fade-in">
           <div className="p-3 border-b border-white/20 text-center relative">
             <h2 className="text-lg font-bold">Select a Song</h2>
             <button
               onClick={() => setShowModal(false)}
               className="absolute top-2 right-3 text-xl font-bold text-white hover:text-pink-400 transition"
+              aria-label="Close song selection"
             >
               ×
             </button>

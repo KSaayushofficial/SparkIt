@@ -1,9 +1,7 @@
-// app/layout.tsx
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import PersistentAudioPlayer from "@/components/PersistentAudioPlayer";
-
+import MusicComponent from "@/components/audio/MusicComponent"; // ✅ Import it
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,8 +25,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <PersistentAudioPlayer />{" "}
-          {/* Mounted globally, but UI only on /home */}
+          <MusicComponent /> {/* mounted once, invisible on other pages */}
         </ThemeProvider>
       </body>
     </html>

@@ -261,11 +261,11 @@ return (
       </div>
     </div>
     {/* Music Player Fixed at Bottom */}
-    <div className="w-full sticky bottom-0 pb-4 bg-gradient-to-t from-black/80 to-transparent pt-8 -mx-6 px-6">
+    {/* <div className="w-full sticky bottom-0 pb-4 bg-gradient-to-t from-black/80 to-transparent pt-8 -mx-6 px-6">
         <div className="min-h-[80px]">
-          <MusicComponent />
+          <MusicComponent showUI={false} />
         </div>
-      </div>
+      </div> */}
   </div>
 );
 }

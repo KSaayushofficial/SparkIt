@@ -6,12 +6,7 @@ import MusicComponent from "./audio/MusicComponent";
 export default function PersistentAudioPlayer() {
   const pathname = usePathname();
 
-  // Only show visual player UI on /home
-  const showUI = pathname === "/home";
+  const showUI = pathname === "/home"; // Show player UI only on /home
 
-  return (
-    <div className={showUI ? "block" : "hidden"}>
-      <MusicComponent />
-    </div>
-  );
+  return <MusicComponent showUI={showUI} />;
 }

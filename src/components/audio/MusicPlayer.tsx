@@ -31,7 +31,7 @@ export default function MusicPlayer({
   }, [previewUrl]);
 
   return (
-    <div className="w-[500px] p-5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl text-white relative overflow-hidden">
+    <div className="w-[420px] p-5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl text-white relative overflow-hidden">
       {/* Top Controls: Search input + Relax Mode toggle */}
       <div className="flex items-center justify-center gap-3 mb-4">
         <input
