@@ -13,14 +13,17 @@ interface Track {
 }
 
 export default function MusicComponent() {
+  const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showModal, setShowModal] = useState(false);
-
   const [minimized, setMinimized] = useState(false);
   const [closed, setClosed] = useState(false);
-  if (closed) return null;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const searchTracks = async (searchTerm: string) => {
     if (!searchTerm.trim()) {
@@ -64,100 +67,116 @@ export default function MusicComponent() {
 
   const logoSize = 48;
 
+  if (!mounted) return null;
+
   return (
     <>
-      <div
-        className={`fixed bottom-4 right-4 z-50 bg-white/10 backdrop-blur-lg border border-white/30 rounded-2xl shadow-lg
-          transition-all duration-300 ease-in-out overflow-hidden box-border
-          flex flex-col items-center justify-center
-          ${
-            minimized
-              ? `w-${logoSize} h-${logoSize} p-1 cursor-pointer`
-              : "w-[450px] p-4 cursor-default"
-          }
-        `}
-        onClick={() => {
-          if (minimized) setMinimized(false);
-        }}
-      >
-        {/* Top controls only when maximized */}
-        {!minimized && (
-          <div className="flex justify-end items-center gap-2 mb-2 select-none w-full">
-            {selectedTrack && (
-              <div className="flex items-center gap-2 truncate max-w-[240px] text-white font-semibold text-sm">
+      {/* 🎵 Restore Button if Closed */}
+      {closed && (
+        <button
+          onClick={() => setClosed(false)}
+          className="fixed bottom-4 right-4 z-50 bg-pink-600 hover:bg-pink-500 text-white p-3 rounded-full shadow-lg transition"
+          title="Open Music Player"
+        >
+          <Music size={20} />
+        </button>
+      )}
+
+      {/* 🎶 Music Player UI */}
+      {!closed && (
+        <div
+          className={`fixed bottom-4 right-4 z-50 bg-white/10 backdrop-blur-lg border border-white/30 rounded-2xl shadow-lg
+            transition-all duration-300 ease-in-out overflow-hidden box-border
+            flex flex-col items-center justify-center
+            ${
+              minimized
+                ? `w-${logoSize} h-${logoSize} p-1 cursor-pointer`
+                : "w-[450px] p-4 cursor-default"
+            }
+          `}
+          onClick={() => {
+            if (minimized) setMinimized(false);
+          }}
+        >
+          {/* Top Controls */}
+          {!minimized && (
+            <div className="flex justify-end items-center gap-2 mb-2 select-none w-full">
+              {selectedTrack && (
+                <div className="flex items-center gap-2 truncate max-w-[240px] text-white font-semibold text-sm">
+                  <img
+                    src={selectedTrack.thumbnail}
+                    alt={selectedTrack.title}
+                    className="w-6 h-6 rounded-lg object-cover"
+                  />
+                  <span className="truncate">{selectedTrack.title}</span>
+                </div>
+              )}
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMinimized(true);
+                }}
+                className="text-white hover:text-pink-400 p-1 rounded"
+                aria-label="Minimize music player"
+                title="Minimize"
+              >
+                <Minimize2 size={18} />
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setClosed(true);
+                }}
+                className="text-white hover:text-red-500 p-1 rounded"
+                aria-label="Close music player"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          )}
+
+          {/* Main Player */}
+          <div
+            className={`w-full transition-all duration-300 ${
+              minimized
+                ? "opacity-0 pointer-events-none h-0 overflow-hidden"
+                : "opacity-100 h-auto"
+            }`}
+          >
+            <MusicPlayer
+              title={selectedTrack?.title || "Search and Select a Song"}
+              artist={selectedTrack?.channel || ""}
+              cover={selectedTrack?.thumbnail || ""}
+              previewUrl={selectedTrack?.id || ""}
+              onSearch={handleSearchInput}
+            />
+          </div>
+
+          {/* Minimized Preview */}
+          {minimized && (
+            <div className="absolute flex items-center justify-center w-[120px] h-[120px] rounded-full overflow-hidden shadow-lg cursor-pointer select-none">
+              {selectedTrack ? (
                 <img
                   src={selectedTrack.thumbnail}
                   alt={selectedTrack.title}
-                  className="w-6 h-6 rounded-lg object-cover"
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                  title={selectedTrack.title}
                 />
-                <span className="truncate">{selectedTrack.title}</span>
-              </div>
-            )}
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setMinimized(true);
-              }}
-              className="text-white hover:text-pink-400 p-1 rounded"
-              aria-label="Minimize music player"
-              title="Minimize"
-            >
-              <Minimize2 size={18} />
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setClosed(true);
-              }}
-              className="text-white hover:text-red-500 p-1 rounded"
-              aria-label="Close music player"
-              title="Close"
-            >
-              <X size={18} />
-            </button>
-          </div>
-        )}
-
-        {/* Always render MusicPlayer */}
-        <div
-          className={`w-full transition-all duration-300 ${
-            minimized
-              ? "opacity-0 pointer-events-none h-0 overflow-hidden"
-              : "opacity-100 h-auto"
-          }`}
-        >
-          <MusicPlayer
-            title={selectedTrack?.title || "Search and Select a Song"}
-            artist={selectedTrack?.channel || ""}
-            cover={selectedTrack?.thumbnail || ""}
-            previewUrl={selectedTrack?.id || ""}
-            onSearch={handleSearchInput}
-          />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white bg-gray-700">
+                  <Music size={24} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
+      )}
 
-        {/* Minimized logo overlay */}
-        {minimized && (
-          <div className="absolute flex items-center justify-center w-[120px] h-[120px]  rounded-full overflow-hidden shadow-lg cursor-pointer select-none">
-            {selectedTrack ? (
-              <img
-                src={selectedTrack.thumbnail}
-                alt={selectedTrack.title}
-                className="w-full h-full object-cover"
-                draggable={false}
-                title={selectedTrack.title}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-white bg-gray-700">
-                <Music size={24} />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Track Modal */}
+      {/* 🔍 Modal for Search Results */}
       {showModal && (
         <div className="fixed bottom-20 right-4 z-50 w-[360px] max-h-[300px] overflow-hidden rounded-2xl bg-white/10 backdrop-blur-lg border border-white/30 shadow-2xl text-white transition-all duration-300 animate-fade-in">
           <div className="p-3 border-b border-white/20 text-center relative">

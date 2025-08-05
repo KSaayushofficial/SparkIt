@@ -9,20 +9,83 @@ import FitnessSection from "@/components/dashboard/sections/FitnessSection";
 import StressSection from "@/components/dashboard/sections/StressSection";
 import BackgroundSection from "@/components/dashboard/sections/BackgroundSection";
 import EffectsSection from "@/components/dashboard/sections/EffectsSection";
+import HabitsSection from "@/components/dashboard/sections/HabitsSection";
+import GoalsSection from "@/components/dashboard/sections/GoalsSection";
 import BackgroundManager from "@/components/background/BackgroundManager";
 import EffectsManager from "@/components/dashboard/effects/EffectsManager";
-import type { Todo, Notification } from "@/components/dashboard/types";
+import TodoManager from "@/components/todo/GlobalTodoManager";
+import TodoPopupWidget from "@/components/dashboard/TodoPopupWidget";
+import type {
+  Todo,
+  Habit,
+  Goal,
+  Notification,
+} from "@/components/dashboard/types";
 
 export default function Dashboard() {
   const [activeSection, setActiveSection] = useState("home");
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showTodoPopup, setShowTodoPopup] = useState(false);
+  const [latestTodo, setLatestTodo] = useState<Todo | null>(null);
 
   useEffect(() => {
+    // Load saved data
     const savedTodos = localStorage.getItem("dashboard-todos");
+    const savedHabits = localStorage.getItem("dashboard-habits");
+    const savedGoals = localStorage.getItem("dashboard-goals");
+
     if (savedTodos) {
-      setTodos(JSON.parse(savedTodos));
+      try {
+        const parsed = JSON.parse(savedTodos);
+        // Convert date strings back to Date objects
+        const todosWithDates = parsed.map((todo: any) => ({
+          ...todo,
+          createdAt: new Date(todo.createdAt),
+          completedAt: todo.completedAt
+            ? new Date(todo.completedAt)
+            : undefined,
+          dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
+        }));
+        setTodos(todosWithDates);
+      } catch (error) {
+        console.error("Error parsing todos:", error);
+      }
+    }
+
+    if (savedHabits) {
+      try {
+        const parsed = JSON.parse(savedHabits);
+        const habitsWithDates = parsed.map((habit: any) => ({
+          ...habit,
+          completedDates: habit.completedDates.map(
+            (date: string) => new Date(date)
+          ),
+        }));
+        setHabits(habitsWithDates);
+      } catch (error) {
+        console.error("Error parsing habits:", error);
+      }
+    }
+
+    if (savedGoals) {
+      try {
+        const parsed = JSON.parse(savedGoals);
+        const goalsWithDates = parsed.map((goal: any) => ({
+          ...goal,
+          deadline: new Date(goal.deadline),
+          milestones: goal.milestones.map((milestone: any) => ({
+            ...milestone,
+            dueDate: new Date(milestone.dueDate),
+          })),
+        }));
+        setGoals(goalsWithDates);
+      } catch (error) {
+        console.error("Error parsing goals:", error);
+      }
     }
 
     // Initialize the global systems
@@ -33,6 +96,14 @@ export default function Dashboard() {
   useEffect(() => {
     localStorage.setItem("dashboard-todos", JSON.stringify(todos));
   }, [todos]);
+
+  useEffect(() => {
+    localStorage.setItem("dashboard-habits", JSON.stringify(habits));
+  }, [habits]);
+
+  useEffect(() => {
+    localStorage.setItem("dashboard-goals", JSON.stringify(goals));
+  }, [goals]);
 
   const initializeGlobalSystems = () => {
     // Remove any existing containers to prevent duplicates
@@ -75,27 +146,70 @@ export default function Dashboard() {
     };
     setNotifications((prev) => [...prev, newNotification]);
 
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      setNotifications((prev) =>
-        prev.filter((n) => n.id !== newNotification.id)
-      );
-    }, 5000);
+    // Auto remove after 5 seconds unless it's an alarm
+    if (notification.type !== "alarm") {
+      setTimeout(() => {
+        setNotifications((prev) =>
+          prev.filter((n) => n.id !== newNotification.id)
+        );
+      }, 5000);
+    }
   };
 
   const removeNotification = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
+  // Enhanced setTodos function to handle popup notifications
+  const handleSetTodos = (newTodos: Todo[]) => {
+    const previousTodosLength = todos.length;
+    setTodos(newTodos);
+
+    // Check if a new todo was added
+    if (newTodos.length > previousTodosLength) {
+      const latestTodo = newTodos[newTodos.length - 1];
+      setLatestTodo(latestTodo);
+      setShowTodoPopup(true);
+
+      // Auto-hide popup after 4 seconds
+      setTimeout(() => {
+        setShowTodoPopup(false);
+      }, 4000);
+    }
+  };
+
   const renderSection = () => {
     switch (activeSection) {
       case "home":
-        return <HomeSection todos={todos} onNotification={addNotification} />;
+        return (
+          <HomeSection
+            todos={todos}
+            habits={habits}
+            goals={goals}
+            onNotification={addNotification}
+          />
+        );
       case "todo":
         return (
           <TodoSection
             todos={todos}
-            setTodos={setTodos}
+            setTodos={handleSetTodos}
+            onNotification={addNotification}
+          />
+        );
+      case "habits":
+        return (
+          <HabitsSection
+            habits={habits}
+            setHabits={setHabits}
+            onNotification={addNotification}
+          />
+        );
+      case "goals":
+        return (
+          <GoalsSection
+            goals={goals}
+            setGoals={setGoals}
             onNotification={addNotification}
           />
         );
@@ -110,7 +224,14 @@ export default function Dashboard() {
       case "effects":
         return <EffectsSection onNotification={addNotification} />;
       default:
-        return <HomeSection todos={todos} onNotification={addNotification} />;
+        return (
+          <HomeSection
+            todos={todos}
+            habits={habits}
+            goals={goals}
+            onNotification={addNotification}
+          />
+        );
     }
   };
 
@@ -130,6 +251,20 @@ export default function Dashboard() {
       {/* Global Effects Manager */}
       <EffectsManager />
 
+      {/* Global Todo Manager - Always Active */}
+      <TodoManager
+        todos={todos}
+        setTodos={setTodos}
+        onNotification={addNotification}
+      />
+
+      {/* Todo Popup Widget */}
+      <TodoPopupWidget
+        isVisible={showTodoPopup}
+        todo={latestTodo}
+        onClose={() => setShowTodoPopup(false)}
+      />
+
       {/* Main Layout */}
       <div className="relative z-20 flex h-screen">
         {/* Sidebar */}
@@ -144,14 +279,14 @@ export default function Dashboard() {
         </main>
       </div>
 
-      {/* Notifications */}
+      {/* Enhanced Notifications */}
       <div className="fixed top-4 right-4 z-50 space-y-2">
         {notifications.map((notification) => (
           <div
             key={notification.id}
             className={`p-4 rounded-lg backdrop-blur-md border shadow-lg max-w-sm transition-all duration-300 ${
               notification.type === "alarm"
-                ? "bg-red-500/90 border-red-400 text-white"
+                ? "bg-red-500/90 border-red-400 text-white animate-pulse"
                 : notification.type === "success"
                 ? "bg-green-500/90 border-green-400 text-white"
                 : notification.type === "warning"
@@ -161,7 +296,12 @@ export default function Dashboard() {
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h4 className="font-semibold text-sm">{notification.title}</h4>
+                <h4 className="font-semibold text-sm flex items-center gap-2">
+                  {notification.type === "alarm" && "🔔"}
+                  {notification.type === "success" && "✅"}
+                  {notification.type === "info" && "ℹ️"}
+                  {notification.title}
+                </h4>
                 <p className="text-sm opacity-90 mt-1">
                   {notification.message}
                 </p>
@@ -174,12 +314,30 @@ export default function Dashboard() {
               </button>
             </div>
             {notification.type === "alarm" && (
-              <button
-                onClick={() => removeNotification(notification.id)}
-                className="mt-2 px-3 py-1 bg-white/20 rounded text-sm hover:bg-white/30 transition-colors"
-              >
-                Cancel Alarm
-              </button>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => removeNotification(notification.id)}
+                  className="px-3 py-1 bg-white/20 rounded text-sm hover:bg-white/30 transition-colors"
+                >
+                  Dismiss
+                </button>
+                <button
+                  onClick={() => {
+                    // Snooze for 5 minutes
+                    removeNotification(notification.id);
+                    setTimeout(() => {
+                      addNotification({
+                        type: "alarm",
+                        title: "Snoozed Reminder",
+                        message: notification.message,
+                      });
+                    }, 5 * 60 * 1000);
+                  }}
+                  className="px-3 py-1 bg-yellow-500/20 rounded text-sm hover:bg-yellow-500/30 transition-colors"
+                >
+                  Snooze 5min
+                </button>
+              </div>
             )}
           </div>
         ))}

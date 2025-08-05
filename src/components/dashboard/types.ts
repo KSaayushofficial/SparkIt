@@ -13,6 +13,7 @@ export interface Todo {
   tags: string[];
   dueDate?: Date;
   estimatedTime?: number;
+  alarm?: boolean; 
 }
 
 export interface Habit {
@@ -20,6 +21,11 @@ export interface Habit {
   name: string;
   description: string;
   streak: number;
+  bestStreak: number;
+  frequency: "daily" | "weekly" | "monthly";
+  difficulty: "easy" | "medium" | "hard";
+  createdAt: Date;
+  lastCompleted?: Date;
   completedDates: Date[];
   target: number;
   category: string;

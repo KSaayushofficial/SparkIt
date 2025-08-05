@@ -9,6 +9,8 @@ import {
   Brain,
   ImageIcon,
   Sparkles,
+  Target,
+  Calendar,
 } from "lucide-react";
 
 interface VerticalSidebarProps {
@@ -25,16 +27,28 @@ const sidebarItems = [
     color: "from-green-500 to-emerald-500",
   },
   {
+    id: "habits",
+    icon: Calendar,
+    label: "Habits",
+    color: "from-purple-500 to-pink-500",
+  },
+  {
+    id: "goals",
+    icon: Target,
+    label: "Goals",
+    color: "from-orange-500 to-red-500",
+  },
+  {
     id: "music",
     icon: Music,
     label: "Music",
-    color: "from-purple-500 to-pink-500",
+    color: "from-violet-500 to-purple-500",
   },
   {
     id: "fitness",
     icon: Dumbbell,
     label: "Fitness",
-    color: "from-orange-500 to-red-500",
+    color: "from-red-500 to-pink-500",
   },
   {
     id: "stress",

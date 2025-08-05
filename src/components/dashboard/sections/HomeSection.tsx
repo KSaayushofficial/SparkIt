@@ -11,11 +11,22 @@ import {
   TrendingUp,
 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
-import MusicComponent from "@/components/audio/MusicComponent";
+import type {
+  Todo,
+  Habit,
+  Goal,
+  Notification,
+} from "@/components/dashboard/types";
 
 interface HomeSectionProps {
-  onNotification: (notification: any) => void;
+  todos: Todo[];
+  habits: Habit[];
+  goals: Goal[];
+  onNotification: (
+    notification: Omit<Notification, "id" | "timestamp">
+  ) => void;
 }
+
 
 const motivationalQuotes = [
   {
@@ -260,12 +271,6 @@ return (
         </GlassPanel>
       </div>
     </div>
-    {/* Music Player Fixed at Bottom */}
-    {/* <div className="w-full sticky bottom-0 pb-4 bg-gradient-to-t from-black/80 to-transparent pt-8 -mx-6 px-6">
-        <div className="min-h-[80px]">
-          <MusicComponent showUI={false} />
-        </div>
-      </div> */}
   </div>
 );
 }
