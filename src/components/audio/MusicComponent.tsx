@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import Image from "next/image";
 import MusicPlayer from "./MusicPlayer";
 import { debounce } from "lodash";
 import { Minimize2, X, Music } from "lucide-react";
@@ -11,13 +12,9 @@ interface Track {
   channel: string;
   thumbnail: string;
 }
-interface MusicComponentProps {
-  showUI: boolean;
-}
 
-export default function MusicComponent({ showUI }: MusicComponentProps) {
+export default function MusicComponent() {
   const [mounted, setMounted] = useState(false);
-  const [query, setQuery] = useState("");
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -51,22 +48,22 @@ export default function MusicComponent({ showUI }: MusicComponentProps) {
     }
   };
 
-  const debouncedSearch = useCallback(
-    debounce((term: string) => {
-      searchTracks(term);
-    }, 300),
+  const debouncedSearch = useMemo(
+    () => debounce((term: string) => searchTracks(term), 300),
     []
   );
 
-  const handleSearchInput = (term: string) => {
-    setQuery(term);
-    debouncedSearch(term);
-  };
+  const handleSearchInput = useCallback(
+    (term: string) => {
+      debouncedSearch(term);
+    },
+    [debouncedSearch]
+  );
 
-  const handleSelectTrack = (track: Track) => {
+  const handleSelectTrack = useCallback((track: Track) => {
     setSelectedTrack(track);
     setShowModal(false);
-  };
+  }, []);
 
   const logoSize = 48;
 
@@ -106,9 +103,11 @@ export default function MusicComponent({ showUI }: MusicComponentProps) {
             <div className="flex justify-end items-center gap-2 mb-2 select-none w-full">
               {selectedTrack && (
                 <div className="flex items-center gap-2 truncate max-w-[240px] text-white font-semibold text-sm">
-                  <img
+                  <Image
                     src={selectedTrack.thumbnail}
                     alt={selectedTrack.title}
+                    width={24}
+                    height={24}
                     className="w-6 h-6 rounded-lg object-cover"
                   />
                   <span className="truncate">{selectedTrack.title}</span>
@@ -162,9 +161,11 @@ export default function MusicComponent({ showUI }: MusicComponentProps) {
           {minimized && (
             <div className="absolute flex items-center justify-center w-[120px] h-[120px] rounded-full overflow-hidden shadow-lg cursor-pointer select-none">
               {selectedTrack ? (
-                <img
+                <Image
                   src={selectedTrack.thumbnail}
                   alt={selectedTrack.title}
+                  width={120}
+                  height={120}
                   className="w-full h-full object-cover"
                   draggable={false}
                   title={selectedTrack.title}
@@ -206,9 +207,11 @@ export default function MusicComponent({ showUI }: MusicComponentProps) {
                     onClick={() => handleSelectTrack(track)}
                     className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/20 transition cursor-pointer"
                   >
-                    <img
+                    <Image
                       src={track.thumbnail}
                       alt={track.title}
+                      width={40}
+                      height={40}
                       className="w-10 h-10 object-cover rounded-lg shadow-sm"
                     />
                     <div className="flex-1 min-w-0">
