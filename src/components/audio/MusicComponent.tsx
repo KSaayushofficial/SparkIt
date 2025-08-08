@@ -53,12 +53,14 @@ export default function MusicComponent() {
     []
   );
 
-  const handleSearchInput = useCallback(
-    (term: string) => {
+const handleSearchInput = useCallback(
+  (term: string) => {
+    if (term.trim().length >= 2 || term.trim().length === 0) {
       debouncedSearch(term);
-    },
-    [debouncedSearch]
-  );
+    }
+  },
+  [debouncedSearch]
+);
 
   const handleSelectTrack = useCallback((track: Track) => {
     setSelectedTrack(track);

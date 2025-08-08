@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import { PiFlowerLotusDuotone } from "react-icons/pi";
 
 interface MusicPlayerProps {
@@ -76,10 +77,13 @@ export default function MusicPlayer({
         <div className="flex flex-col items-center">
           {/* Info Row */}
           <div className="flex w-full gap-3 items-center">
-            <img
+            <Image
               src={cover || "/default_cover.png"}
-              alt="cover"
+              alt="album cover"
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-xl object-cover shadow-lg"
+              priority
             />
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="relative w-full h-[24px] overflow-hidden">
@@ -104,7 +108,7 @@ export default function MusicPlayer({
               {randomHeights.map((height, i) => (
                 <div
                   key={i}
-                  className=" rounded-sm glowing-bar"
+                  className="rounded-sm glowing-bar"
                   style={{
                     height: `${height}px`,
                     animationDelay: `${i * 0.05}s`,
