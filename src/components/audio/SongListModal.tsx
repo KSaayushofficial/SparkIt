@@ -1,9 +1,18 @@
 "use client";
 
+import Image from "next/image";
+
+interface Track {
+  id: string;
+  title: string;
+  channel: string;
+  thumbnail: string;
+}
+
 interface SongListModalProps {
-  tracks: any[];
+  tracks: Track[];
   onClose: () => void;
-  onSelect: (track: any) => void;
+  onSelect: (track: Track) => void;
 }
 
 export default function SongListModal({
@@ -20,6 +29,7 @@ export default function SongListModal({
         <button
           onClick={onClose}
           className="text-white text-2xl mb-4 float-right hover:text-red-500 transition"
+          aria-label="Close modal"
         >
           ✕
         </button>
@@ -41,10 +51,13 @@ export default function SongListModal({
                   onClose();
                 }}
               >
-                <img
+                <Image
                   src={track.thumbnail}
                   alt={track.title}
+                  width={48}
+                  height={48}
                   className="w-12 h-12 rounded-md object-cover"
+                  unoptimized // Remove if you configure i.ytimg.com in next.config.js
                 />
                 <div className="flex-1 text-left text-white">
                   <p className="font-semibold truncate">{track.title}</p>

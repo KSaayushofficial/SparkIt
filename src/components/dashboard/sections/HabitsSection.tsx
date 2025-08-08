@@ -7,7 +7,6 @@ import GlassPanel from "@/components/ui/GlassPanel";
 import type { Habit } from "../types";
 import type { Notification } from "@/components/dashboard/types";
 
-
 interface HabitsSectionProps {
   habits: Habit[];
   setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
@@ -25,6 +24,7 @@ const categories = [
   "Social",
   "Creative",
 ];
+
 const colors = [
   "from-blue-500 to-cyan-500",
   "from-green-500 to-emerald-500",
@@ -35,10 +35,11 @@ const colors = [
   "from-rose-500 to-pink-500",
 ];
 
-export default function HabitsSection({ 
-      habits,
-      setHabits,
-       onNotification }: HabitsSectionProps) {
+export default function HabitsSection({
+  habits,
+  setHabits,
+  onNotification,
+}: HabitsSectionProps) {
   const [newHabit, setNewHabit] = useState("");
   const [newCategory, setNewCategory] = useState("Health");
   const [newDifficulty, setNewDifficulty] = useState<
@@ -46,13 +47,26 @@ export default function HabitsSection({
   >("medium");
   const [showAddForm, setShowAddForm] = useState(false);
 
+  // Load habits from localStorage and parse dates
   useEffect(() => {
     const savedHabits = localStorage.getItem("habits");
     if (savedHabits) {
-      setHabits(JSON.parse(savedHabits));
+      try {
+        const parsedHabits = JSON.parse(savedHabits).map((habit: any) => ({
+          ...habit,
+          completedDates: habit.completedDates.map(
+            (dateStr: string) => new Date(dateStr)
+          ),
+          createdAt: new Date(habit.createdAt),
+        }));
+        setHabits(parsedHabits);
+      } catch (error) {
+        console.error("Error parsing habits:", error);
+      }
     }
   }, []);
 
+  // Save habits to localStorage
   useEffect(() => {
     localStorage.setItem("habits", JSON.stringify(habits));
   }, [habits]);
@@ -86,20 +100,25 @@ export default function HabitsSection({
     }
   };
 
+  const parseDate = (date: Date | string): Date => {
+    return date instanceof Date ? date : new Date(date);
+  };
+
   const toggleHabit = (id: string) => {
     const today = new Date();
     setHabits(
       habits.map((habit) => {
         if (habit.id === id) {
           const alreadyCompleted = habit.completedDates.some(
-            (date) => date.toDateString() === today.toDateString()
+            (date) => parseDate(date).toDateString() === today.toDateString()
           );
 
           if (alreadyCompleted) {
             return {
               ...habit,
               completedDates: habit.completedDates.filter(
-                (date) => date.toDateString() !== today.toDateString()
+                (date) =>
+                  parseDate(date).toDateString() !== today.toDateString()
               ),
               streak: Math.max(0, habit.streak - 1),
             };
@@ -120,7 +139,7 @@ export default function HabitsSection({
     const habit = habits.find((h) => h.id === id);
     if (habit) {
       const isCompleted = habit.completedDates.some(
-        (date) => date.toDateString() === today.toDateString()
+        (date) => parseDate(date).toDateString() === today.toDateString()
       );
       if (!isCompleted) {
         onNotification({
@@ -137,14 +156,14 @@ export default function HabitsSection({
   const isCompletedToday = (habit: Habit) => {
     const today = new Date();
     return habit.completedDates.some(
-      (date) => date.toDateString() === today.toDateString()
+      (date) => parseDate(date).toDateString() === today.toDateString()
     );
   };
 
   const getCompletionRate = (habit: Habit) => {
     const daysSinceCreated =
       Math.floor(
-        (Date.now() - new Date(habit.createdAt).getTime()) /
+        (Date.now() - parseDate(habit.createdAt).getTime()) /
           (1000 * 60 * 60 * 24)
       ) + 1;
     return Math.round((habit.completedDates.length / daysSinceCreated) * 100);
