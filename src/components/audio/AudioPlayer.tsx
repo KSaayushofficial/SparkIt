@@ -254,7 +254,6 @@ export default function AudioPlayer() {
                 <audio
                   ref={audioRef}
                   src={currentTrack.audioUrl}
-                  volume={volume}
                 />
               </GlassPanel>
             </motion.div>

@@ -11,8 +11,11 @@ interface Track {
   channel: string;
   thumbnail: string;
 }
+interface MusicComponentProps {
+  showUI: boolean;
+}
 
-export default function MusicComponent() {
+export default function MusicComponent({ showUI }: MusicComponentProps) {
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
   const [tracks, setTracks] = useState<Track[]>([]);

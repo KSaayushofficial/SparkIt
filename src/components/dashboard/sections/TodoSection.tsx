@@ -72,7 +72,7 @@ export default function TodoSection({
       createdAt: now,
       timer: timerMinutes,
       isTimerRunning: true,
-      alarm: alarmTime.toTimeString().slice(0, 5), // HH:MM format
+      alarm: true, // Set to true since the type expects boolean
       hasAlarm: true,
       tags: [],
       estimatedTime: timerMinutes,
@@ -421,7 +421,6 @@ export default function TodoSection({
             filteredTodos.map((todo) => (
               <GlassPanel
                 key={todo.id}
-                id={`todo-${todo.id}`}
                 className={`p-4 transition-all ${
                   todo.completed ? "opacity-60" : ""
                 } ${

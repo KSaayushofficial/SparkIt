@@ -207,11 +207,7 @@ export default function Dashboard() {
         );
       case "goals":
         return (
-          <GoalsSection
-            goals={goals}
-            setGoals={setGoals}
-            onNotification={addNotification}
-          />
+          <GoalsSection onNotification={addNotification} />
         );
       case "music":
         return <MusicSection onNotification={addNotification} />;

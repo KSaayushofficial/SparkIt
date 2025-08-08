@@ -95,7 +95,14 @@ export default function MainDashboard() {
   const renderActiveSection = () => {
     switch (activeSection) {
       case "home":
-        return <HomeSection todos={todos} onNotification={addNotification} />;
+        return (
+          <HomeSection
+            todos={todos}
+            habits={[]} // TODO: Replace with actual habits data if available
+            goals={[]} // TODO: Replace with actual goals data if available
+            onNotification={addNotification}
+          />
+        );
       case "todo":
         return (
           <TodoSection
@@ -115,7 +122,14 @@ export default function MainDashboard() {
       case "effects":
         return <EffectsSection onNotification={addNotification} />;
       default:
-        return <HomeSection todos={todos} onNotification={addNotification} />;
+        return (
+          <HomeSection
+            todos={todos}
+            habits={[]} // TODO: Replace with actual habits data if available
+            goals={[]} // TODO: Replace with actual goals data if available
+            onNotification={addNotification}
+          />
+        );
     }
   };
 
@@ -123,7 +137,6 @@ export default function MainDashboard() {
     <div className="min-h-screen flex relative z-10">
       {/* Vertical Sidebar */}
       <VerticalSidebar
-        items={sidebarItems}
         activeSection={activeSection}
         setActiveSection={setActiveSection}
       />

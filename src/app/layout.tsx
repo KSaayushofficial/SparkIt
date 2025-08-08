@@ -25,7 +25,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <MusicComponent /> {/* mounted once, invisible on other pages */}
+          <MusicComponent showUI={false}/> {/* mounted once, invisible on other pages */}
         </ThemeProvider>
       </body>
     </html>

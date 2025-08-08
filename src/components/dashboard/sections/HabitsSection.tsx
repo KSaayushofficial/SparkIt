@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Flame, Award, CheckCircle2, Circle, Target } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
-import type {Habit} from "../types";
+import type { Habit } from "../types";
+import type { Notification } from "@/components/dashboard/types";
 
 
 interface HabitsSectionProps {
@@ -86,17 +87,19 @@ export default function HabitsSection({
   };
 
   const toggleHabit = (id: string) => {
-    const today = new Date().toDateString();
+    const today = new Date();
     setHabits(
       habits.map((habit) => {
         if (habit.id === id) {
-          const alreadyCompleted = habit.completedDates.includes(today);
+          const alreadyCompleted = habit.completedDates.some(
+            (date) => date.toDateString() === today.toDateString()
+          );
 
           if (alreadyCompleted) {
             return {
               ...habit,
               completedDates: habit.completedDates.filter(
-                (date) => date !== today
+                (date) => date.toDateString() !== today.toDateString()
               ),
               streak: Math.max(0, habit.streak - 1),
             };
@@ -116,7 +119,9 @@ export default function HabitsSection({
 
     const habit = habits.find((h) => h.id === id);
     if (habit) {
-      const isCompleted = habit.completedDates.includes(today);
+      const isCompleted = habit.completedDates.some(
+        (date) => date.toDateString() === today.toDateString()
+      );
       if (!isCompleted) {
         onNotification({
           type: "success",
@@ -130,8 +135,10 @@ export default function HabitsSection({
   };
 
   const isCompletedToday = (habit: Habit) => {
-    const today = new Date().toDateString();
-    return habit.completedDates.includes(today);
+    const today = new Date();
+    return habit.completedDates.some(
+      (date) => date.toDateString() === today.toDateString()
+    );
   };
 
   const getCompletionRate = (habit: Habit) => {

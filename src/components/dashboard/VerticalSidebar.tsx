@@ -13,7 +13,8 @@ import {
   Calendar,
 } from "lucide-react";
 
-interface VerticalSidebarProps {
+
+export interface VerticalSidebarProps {
   activeSection: string;
   setActiveSection: (section: string) => void;
 }
@@ -130,3 +131,4 @@ export default function VerticalSidebar({
     </div>
   );
 }
+

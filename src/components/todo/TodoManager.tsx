@@ -132,13 +132,13 @@ export default function TodoManager({
         todos.map((t) => (t.id === id ? { ...t, isTimerRunning: false } : t))
       );
     } else {
-     const interval = setInterval(() => {
-       setTodos((prevTodos: Todo[]) =>
-         prevTodos.map((t) =>
-           t.id === id ? { ...t, timer: (t.timer ?? 0) + 1 } : t
-         )
-       );
-     }, 1000);
+      const interval = setInterval(() => {
+        setTodos(
+          todos.map((t) =>
+            t.id === id ? { ...t, timer: (t.timer ?? 0) + 1 } : t
+          )
+        );
+      }, 1000);
 
       setTimers({ ...timers, [id]: interval });
       setTodos(

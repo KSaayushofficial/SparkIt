@@ -5,7 +5,7 @@ import type { Todo, Notification } from "@/components/dashboard/types";
 
 interface GlobalTodoManagerProps {
   todos: Todo[];
-  setTodos: (todos: Todo[]) => void;
+  setTodos: (todos: Todo[] | ((prevTodos: Todo[]) => Todo[])) => void;
   onNotification: (
     notification: Omit<Notification, "id" | "timestamp">
   ) => void;
@@ -65,7 +65,11 @@ export default function GlobalTodoManager({
       .padStart(2, "0")}:${currentMinute.toString().padStart(2, "0")}`;
 
     todos.forEach((todo) => {
-      if (todo.alarm && !todo.completed && todo.alarm === currentTimeString) {
+      if (
+        typeof todo.alarm === "string" &&
+        !todo.completed &&
+        todo.alarm === currentTimeString
+      ) {
         const alarmKey = `${todo.id}-${now.toDateString()}`;
 
         // Check if we haven't already triggered this alarm today
@@ -100,8 +104,8 @@ export default function GlobalTodoManager({
           });
 
           // Update todo to stop timer
-          setTodos((prevTodos) =>
-            prevTodos.map((t) =>
+          setTodos(
+            todos.map((t: Todo) =>
               t.id === todo.id ? { ...t, isTimerRunning: false } : t
             )
           );
@@ -176,8 +180,8 @@ export default function GlobalTodoManager({
     }
 
     // Update todo to show timer is running
-    setTodos((prevTodos) =>
-      prevTodos.map((todo) =>
+    setTodos(
+      todos.map((todo: Todo) =>
         todo.id === todoId ? { ...todo, isTimerRunning: true } : todo
       )
     );
@@ -212,8 +216,8 @@ export default function GlobalTodoManager({
       }
 
       // Update todo to stop timer
-      setTodos((prevTodos) =>
-        prevTodos.map((t) =>
+      setTodos((prevTodos: Todo[]) =>
+        prevTodos.map((t: Todo) =>
           t.id === todoId ? { ...t, isTimerRunning: false } : t
         )
       );
@@ -241,8 +245,8 @@ export default function GlobalTodoManager({
     }
 
     // Update todo to show timer is stopped
-    setTodos((prevTodos) =>
-      prevTodos.map((todo) =>
+    setTodos((prevTodos: Todo[]) =>
+      prevTodos.map((todo: Todo) =>
         todo.id === todoId ? { ...todo, isTimerRunning: false } : todo
       )
     );

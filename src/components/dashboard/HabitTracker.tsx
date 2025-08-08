@@ -22,11 +22,15 @@ export default function HabitTracker({ habits, setHabits }: HabitTrackerProps) {
         name: newHabit,
         description: "",
         streak: 0,
+        bestStreak: 0,
         completedDates: [],
         target: 1,
         category: "Personal",
         color: "from-purple-500 to-pink-500",
         isCompleted: false,
+        frequency: "daily", // or another default value as per your Habit type
+        difficulty: "easy", // or another default value as per your Habit type
+        createdAt: new Date(),
       };
       setHabits([...habits, habit]);
       setNewHabit("");

@@ -2389,7 +2389,7 @@ export default function BackgroundSection({
       </div>
 
       {/* Enhanced CSS Animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes cloud-drift-0 {
           0% {
             transform: translateX(-100px);
