@@ -20,7 +20,24 @@ import type {
   Habit,
   Goal,
   Notification,
+  Milestone,
 } from "@/components/dashboard/types";
+
+// Define types for the parsed localStorage data
+interface ParsedTodo extends Omit<Todo, 'createdAt' | 'completedAt' | 'dueDate'> {
+  createdAt: string;
+  completedAt?: string;
+  dueDate?: string;
+}
+
+interface ParsedHabit extends Omit<Habit, 'completedDates'> {
+  completedDates: string[];
+}
+
+interface ParsedGoal extends Omit<Goal, 'deadline' | 'milestones'> {
+  deadline: string;
+  milestones: Array<Omit<Milestone, 'dueDate'> & { dueDate: string }>;
+}
 
 export default function Dashboard() {
   const [activeSection, setActiveSection] = useState("home");
@@ -40,14 +57,11 @@ export default function Dashboard() {
 
     if (savedTodos) {
       try {
-        const parsed = JSON.parse(savedTodos);
-        // Convert date strings back to Date objects
-        const todosWithDates = parsed.map((todo: any) => ({
+        const parsed: ParsedTodo[] = JSON.parse(savedTodos);
+        const todosWithDates = parsed.map((todo) => ({
           ...todo,
           createdAt: new Date(todo.createdAt),
-          completedAt: todo.completedAt
-            ? new Date(todo.completedAt)
-            : undefined,
+          completedAt: todo.completedAt ? new Date(todo.completedAt) : undefined,
           dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
         }));
         setTodos(todosWithDates);
@@ -58,12 +72,10 @@ export default function Dashboard() {
 
     if (savedHabits) {
       try {
-        const parsed = JSON.parse(savedHabits);
-        const habitsWithDates = parsed.map((habit: any) => ({
+        const parsed: ParsedHabit[] = JSON.parse(savedHabits);
+        const habitsWithDates = parsed.map((habit) => ({
           ...habit,
-          completedDates: habit.completedDates.map(
-            (date: string) => new Date(date)
-          ),
+          completedDates: habit.completedDates.map((date) => new Date(date)),
         }));
         setHabits(habitsWithDates);
       } catch (error) {
@@ -73,11 +85,11 @@ export default function Dashboard() {
 
     if (savedGoals) {
       try {
-        const parsed = JSON.parse(savedGoals);
-        const goalsWithDates = parsed.map((goal: any) => ({
+        const parsed: ParsedGoal[] = JSON.parse(savedGoals);
+        const goalsWithDates = parsed.map((goal) => ({
           ...goal,
           deadline: new Date(goal.deadline),
-          milestones: goal.milestones.map((milestone: any) => ({
+          milestones: goal.milestones.map((milestone) => ({
             ...milestone,
             dueDate: new Date(milestone.dueDate),
           })),
@@ -88,10 +100,12 @@ export default function Dashboard() {
       }
     }
 
-    // Initialize the global systems
     initializeGlobalSystems();
     setIsInitialized(true);
   }, []);
+
+  // ... rest of your component code remains the same ...
+
 
   useEffect(() => {
     localStorage.setItem("dashboard-todos", JSON.stringify(todos));
