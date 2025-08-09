@@ -16,6 +16,10 @@ interface Background {
   effects: string[];
 }
 
+interface CleanupElement extends HTMLElement {
+  cleanup?: () => void;
+}
+
 export default function BackgroundManager() {
   const [currentBackground, setCurrentBackground] = useState<Background | null>(
     null
@@ -129,8 +133,9 @@ export default function BackgroundManager() {
 
     // Clean up existing content
     Array.from(container.children).forEach((child) => {
-      if ((child as any).cleanup) {
-        (child as any).cleanup();
+      const element = child as CleanupElement;
+      if (element.cleanup) {
+        element.cleanup();
       }
     });
 
@@ -274,10 +279,9 @@ export default function BackgroundManager() {
     container.appendChild(gradient);
   };
 
-  // Interactive background creation functions
   const createOceanWavesBackground = (
     container: HTMLElement,
-    background: Background
+    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     container.style.background =
       "linear-gradient(180deg, #87CEEB 0%, #4682B4 30%, #1E90FF 70%, #0066CC 100%)";
@@ -322,14 +326,14 @@ export default function BackgroundManager() {
     const waveInterval = setInterval(createWave, 2000);
 
     // Store cleanup function
-    (container as any).cleanup = () => {
+    (container as CleanupElement).cleanup = () => {
       clearInterval(waveInterval);
     };
   };
 
   const createForestRainBackground = (
     container: HTMLElement,
-    background: Background
+    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     container.style.background =
       "linear-gradient(180deg, #228B22 0%, #006400 50%, #2F4F2F 100%)";
@@ -368,14 +372,14 @@ export default function BackgroundManager() {
     };
 
     const rainInterval = setInterval(createRaindrop, 50);
-    (container as any).cleanup = () => {
+    (container as CleanupElement).cleanup = () => {
       clearInterval(rainInterval);
     };
   };
 
   const createMountainSunriseBackground = (
     container: HTMLElement,
-    background: Background
+    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     container.style.background =
       "linear-gradient(180deg, #FFB6C1 0%, #FFC0CB 30%, #F0E68C 70%, #98FB98 100%)";
@@ -409,7 +413,7 @@ export default function BackgroundManager() {
 
   const createTropicalBeachBackground = (
     container: HTMLElement,
-    background: Background
+    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     container.style.background =
       "linear-gradient(180deg, #87CEEB 0%, #98D8E8 30%, #F0E68C 70%, #DEB887 100%)";
@@ -471,12 +475,12 @@ export default function BackgroundManager() {
     }
 
     const waveInterval = setInterval(createWave, 2000);
-    (container as any).cleanup = () => clearInterval(waveInterval);
+    (container as CleanupElement).cleanup = () => clearInterval(waveInterval);
   };
 
   const createCherryBlossomBackground = (
     container: HTMLElement,
-    background: Background
+    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     container.style.background =
       "linear-gradient(180deg, #FFB6C1 0%, #FFC0CB 30%, #F0E68C 70%, #98FB98 100%)";
@@ -519,12 +523,12 @@ export default function BackgroundManager() {
     };
 
     const petalInterval = setInterval(createPetal, 300);
-    (container as any).cleanup = () => clearInterval(petalInterval);
+    (container as CleanupElement).cleanup = () => clearInterval(petalInterval);
   };
 
   const createNorthernLightsBackground = (
     container: HTMLElement,
-    background: Background
+    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     container.style.background =
       "linear-gradient(180deg, #000428 0%, #004e92 100%)";
@@ -567,12 +571,12 @@ export default function BackgroundManager() {
 
     const auroraInterval = setInterval(createAurora, 3000);
     createAurora();
-    (container as any).cleanup = () => clearInterval(auroraInterval);
+    (container as CleanupElement).cleanup = () => clearInterval(auroraInterval);
   };
 
   const createUnderwaterCoralBackground = (
     container: HTMLElement,
-    background: Background
+    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     container.style.background =
       "linear-gradient(180deg, #006994 0%, #0077be 50%, #004d7a 100%)";
@@ -634,7 +638,7 @@ export default function BackgroundManager() {
 
     const fishInterval = setInterval(createFish, 2000);
     const bubbleInterval = setInterval(createBubble, 500);
-    (container as any).cleanup = () => {
+    (container as CleanupElement).cleanup = () => {
       clearInterval(fishInterval);
       clearInterval(bubbleInterval);
     };
@@ -642,7 +646,7 @@ export default function BackgroundManager() {
 
   const createDesertSunsetBackground = (
     container: HTMLElement,
-    background: Background
+    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     container.style.background =
       "linear-gradient(180deg, #FF6B35 0%, #F7931E 30%, #FFD23F 60%, #C4A484 100%)";
@@ -689,12 +693,13 @@ export default function BackgroundManager() {
     };
 
     const shimmerInterval = setInterval(createShimmer, 1000);
-    (container as any).cleanup = () => clearInterval(shimmerInterval);
+    (container as CleanupElement).cleanup = () =>
+      clearInterval(shimmerInterval);
   };
 
   const createBambooForestBackground = (
     container: HTMLElement,
-    background: Background
+    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     container.style.background =
       "linear-gradient(180deg, #90EE90 0%, #228B22 50%, #006400 100%)";
@@ -748,7 +753,7 @@ export default function BackgroundManager() {
 
   const createAlpineLakeBackground = (
     container: HTMLElement,
-    background: Background
+    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     container.style.background =
       "linear-gradient(180deg, #87CEEB 0%, #4682B4 30%, #1E90FF 70%, #0000CD 100%)";
@@ -792,7 +797,7 @@ export default function BackgroundManager() {
     };
 
     const rippleInterval = setInterval(createRipple, 2000);
-    (container as any).cleanup = () => clearInterval(rippleInterval);
+    (container as CleanupElement).cleanup = () => clearInterval(rippleInterval);
   };
 
   const createDefaultInteractiveBackground = (

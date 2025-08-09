@@ -8,5 +8,5 @@ export default function PersistentAudioPlayer() {
 
   const showUI = pathname === "/home"; 
 
-  return <MusicComponent showUI={showUI} />;
+  return <MusicComponent  />;
 }
