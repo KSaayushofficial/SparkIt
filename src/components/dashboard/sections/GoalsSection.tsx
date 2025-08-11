@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Edit3,
   Trash2,
+  X,
 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 
@@ -35,8 +36,15 @@ interface Milestone {
   completedAt?: Date;
 }
 
+// Define the type for the notification object
+interface Notification {
+  type: "success" | "info" | "error";
+  title: string;
+  message: string;
+}
+
 interface GoalsSectionProps {
-  onNotification: (notification: any) => void;
+  onNotification: (notification: Notification) => void;
 }
 
 const categories = [
@@ -72,7 +80,18 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
   useEffect(() => {
     const savedGoals = localStorage.getItem("goals");
     if (savedGoals) {
-      setGoals(JSON.parse(savedGoals));
+      // Parse goals and convert deadline strings to Date objects
+      const parsedGoals = JSON.parse(savedGoals, (key, value) => {
+        if (
+          key === "deadline" ||
+          key === "createdAt" ||
+          key === "completedAt"
+        ) {
+          return new Date(value);
+        }
+        return value;
+      });
+      setGoals(parsedGoals);
     }
   }, []);
 
@@ -81,7 +100,7 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
   }, [goals]);
 
   const addGoal = () => {
-    if (newGoal.title.trim()) {
+    if (newGoal.title.trim() && newGoal.deadline) {
       const goal: Goal = {
         id: Date.now().toString(),
         title: newGoal.title,
@@ -112,6 +131,12 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
         title: "Goal Added",
         message: `"${newGoal.title}" has been added to your goals`,
       });
+    } else {
+      onNotification({
+        type: "error",
+        title: "Missing Information",
+        message: "Goal title and deadline are required.",
+      });
     }
   };
 
@@ -133,6 +158,20 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
         return goal;
       })
     );
+  };
+
+  const updateGoal = () => {
+    if (editingGoal) {
+      setGoals(
+        goals.map((goal) => (goal.id === editingGoal.id ? editingGoal : goal))
+      );
+      setEditingGoal(null);
+      onNotification({
+        type: "success",
+        title: "Goal Updated",
+        message: `"${editingGoal.title}" has been updated.`,
+      });
+    }
   };
 
   const deleteGoal = (id: string) => {
@@ -296,7 +335,8 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                       onChange={(e) =>
                         setNewGoal({
                           ...newGoal,
-                          priority: e.target.value as any,
+                          // Correctly casting the value to the specific union type
+                          priority: e.target.value as "low" | "medium" | "high",
                         })
                       }
                       className="bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
@@ -471,7 +511,7 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                               </span>
                             </div>
                             <div className="text-white/70 text-xs">
-                              {goal.deadline.toLocaleDateString()}
+                              {new Date(goal.deadline).toLocaleDateString()}
                             </div>
                           </div>
 
@@ -545,6 +585,168 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
           </motion.div>
         )}
       </div>
+
+      {/* Edit Goal Modal */}
+      <AnimatePresence>
+        {editingGoal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+            >
+              <GlassPanel className="p-6 w-full max-w-lg relative">
+                <button
+                  onClick={() => setEditingGoal(null)}
+                  className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  <X size={20} className="text-white" />
+                </button>
+                <h3 className="text-white font-semibold text-2xl mb-4">
+                  Edit Goal
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-white/70 text-sm">Title</label>
+                    <input
+                      type="text"
+                      value={editingGoal.title}
+                      onChange={(e) =>
+                        setEditingGoal({
+                          ...editingGoal,
+                          title: e.target.value,
+                        })
+                      }
+                      className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-white/70 text-sm">Description</label>
+                    <textarea
+                      value={editingGoal.description}
+                      onChange={(e) =>
+                        setEditingGoal({
+                          ...editingGoal,
+                          description: e.target.value,
+                        })
+                      }
+                      rows={3}
+                      className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white/70 text-sm">Category</label>
+                      <select
+                        value={editingGoal.category}
+                        onChange={(e) =>
+                          setEditingGoal({
+                            ...editingGoal,
+                            category: e.target.value,
+                          })
+                        }
+                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      >
+                        {categories.map((cat) => (
+                          <option key={cat} value={cat} className="bg-gray-800">
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-white/70 text-sm">Priority</label>
+                      <select
+                        value={editingGoal.priority}
+                        onChange={(e) =>
+                          setEditingGoal({
+                            ...editingGoal,
+                            priority: e.target.value as
+                              | "low"
+                              | "medium"
+                              | "high",
+                          })
+                        }
+                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      >
+                        {Object.entries(priorities).map(([key, { label }]) => (
+                          <option key={key} value={key} className="bg-gray-800">
+                            {label} Priority
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white/70 text-sm">Target</label>
+                      <input
+                        type="number"
+                        value={editingGoal.target}
+                        onChange={(e) =>
+                          setEditingGoal({
+                            ...editingGoal,
+                            target: Number(e.target.value),
+                          })
+                        }
+                        min="1"
+                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-white/70 text-sm">Unit</label>
+                      <input
+                        type="text"
+                        value={editingGoal.unit}
+                        onChange={(e) =>
+                          setEditingGoal({
+                            ...editingGoal,
+                            unit: e.target.value,
+                          })
+                        }
+                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-white/70 text-sm">Deadline</label>
+                    <input
+                      type="date"
+                      value={editingGoal.deadline.toISOString().split("T")[0]}
+                      onChange={(e) =>
+                        setEditingGoal({
+                          ...editingGoal,
+                          deadline: new Date(e.target.value),
+                        })
+                      }
+                      className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    />
+                  </div>
+                  <div className="flex gap-4 mt-6">
+                    <button
+                      onClick={() => setEditingGoal(null)}
+                      className="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 rounded-lg font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={updateGoal}
+                      className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white py-3 rounded-lg font-medium transition-colors"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              </GlassPanel>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
