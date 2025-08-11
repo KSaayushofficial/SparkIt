@@ -18,6 +18,7 @@ import type {
   Notification,
 } from "@/components/dashboard/types";
 
+
 interface HomeSectionProps {
   todos: Todo[];
   habits: Habit[];
@@ -189,6 +190,7 @@ export default function HomeSection({ onNotification }: HomeSectionProps) {
 return (
   <div className="min-h-screen w-full px-6 py-4 flex flex-col justify-between">
     {" "}
+
     {/* Changed to justify-between */}
     <div className="flex flex-col gap-6">
       <div className="text-center">

@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
 import TodoWidget from "@/components/widgets/TodoWidget";
 import PomodoroWidget from "@/components/widgets/PomodoroWidget";
 import CalendarWidget from "@/components/widgets/CalendarWidget";
@@ -11,7 +10,6 @@ import QuoteWidget from "@/components/widgets/QuoteWidget";
 import GlassPanel from "@/components/ui/GlassPanel";
 
 export default function Dashboard() {
-  const [activeWidget, setActiveWidget] = useState<string | null>(null);
 
   return (
     <motion.div
