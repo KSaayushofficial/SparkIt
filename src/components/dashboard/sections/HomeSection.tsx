@@ -17,7 +17,6 @@ import type {
   Goal,
   Notification,
 } from "@/components/dashboard/types";
-import TodoPopupWidget from "../TodoPopupWidget";
 
 interface HomeSectionProps {
   todos: Todo[];
@@ -50,7 +49,7 @@ const motivationalQuotes = [
     category: "resilience",
   },
   {
-    text: "Your limitation—it's only your imagination.",
+    text: "Your limitation—it&apos;s only your imagination.",
     author: "Unknown",
     category: "potential",
   },
@@ -70,17 +69,17 @@ const motivationalQuotes = [
     category: "action",
   },
   {
-    text: "Success doesn't just find you. You have to go out and get it.",
+    text: "Success doesn&apos;t just find you. You have to go out and get it.",
     author: "Unknown",
     category: "achievement",
   },
   {
-    text: "The harder you work for something, the greater you'll feel when you achieve it.",
+    text: "The harder you work for something, the greater you&apos;ll feel when you achieve it.",
     author: "Unknown",
     category: "effort",
   },
   {
-    text: "Don't stop when you're tired. Stop when you're done.",
+    text: "Don&apos;t stop when you&apos;re tired. Stop when you&apos;re done.",
     author: "Unknown",
     category: "persistence",
   },
@@ -110,23 +109,6 @@ export default function HomeSection({ onNotification }: HomeSectionProps) {
   const [currentQuote, setCurrentQuote] = useState(motivationalQuotes[0]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-
-  useEffect(() => {
-    // Update time every second
-    const timeInterval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    // Auto-refresh quote every 5 minutes
-    const quoteInterval = setInterval(() => {
-      refreshQuote();
-    }, 300000); // 5 minutes
-
-    return () => {
-      clearInterval(timeInterval);
-      clearInterval(quoteInterval);
-    };
-  }, []);
 
   const refreshQuote = () => {
     setIsRefreshing(true);
@@ -161,6 +143,23 @@ export default function HomeSection({ onNotification }: HomeSectionProps) {
     }, 500);
   };
 
+  useEffect(() => {
+    // Update time every second
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    // Auto-refresh quote every 5 minutes
+    const quoteInterval = setInterval(() => {
+      refreshQuote();
+    }, 300000); // 5 minutes
+
+    return () => {
+      clearInterval(timeInterval);
+      clearInterval(quoteInterval);
+    };
+  }, [refreshQuote]);
+
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
@@ -188,7 +187,6 @@ export default function HomeSection({ onNotification }: HomeSectionProps) {
 
   return (
     <div className="min-h-screen w-full px-6 py-4 flex flex-col justify-between">
-      {" "}
       <div className="flex flex-col gap-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -256,7 +254,7 @@ export default function HomeSection({ onNotification }: HomeSectionProps) {
 
             <div className="text-center">
               <blockquote className="text-sm text-white italic leading-relaxed">
-                "{currentQuote.text}"
+                &quot;{currentQuote.text}&quot;
               </blockquote>
               <div className="text-white/70 text-xs mt-2">
                 — {currentQuote.author}
