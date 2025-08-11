@@ -21,9 +21,7 @@ interface CleanupElement extends HTMLElement {
 }
 
 export default function BackgroundManager() {
-  const [currentBackground, setCurrentBackground] = useState<Background | null>(
-    null
-  );
+  const [currentBackground, setCurrentBackground] = useState<Background | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const clearBackground = useCallback(() => {
@@ -55,8 +53,7 @@ export default function BackgroundManager() {
         video.playbackRate = background.speed;
 
         if (background.hasAudio) {
-          const globalVolume =
-            localStorage.getItem("background-volume") || "50";
+          const globalVolume = localStorage.getItem("background-volume") || "50";
           const isMuted = localStorage.getItem("background-muted") === "true";
           video.volume = isMuted
             ? 0
@@ -105,8 +102,7 @@ export default function BackgroundManager() {
         preloadImg.onerror = () => {
           reject(new Error("Failed to load image"));
         };
-        preloadImg.src =
-          background.url || "/placeholder.svg?height=1080&width=1920";
+        preloadImg.src = background.url || "/placeholder.svg?height=1080&width=1920";
       });
     },
     []
@@ -121,37 +117,37 @@ export default function BackgroundManager() {
 
       switch (background.id) {
         case "ocean-waves":
-          createOceanWavesBackground(scene, background);
+          createOceanWavesBackground(scene);
           break;
         case "forest-rain":
-          createForestRainBackground(scene, background);
+          createForestRainBackground(scene);
           break;
         case "mountain-sunrise":
-          createMountainSunriseBackground(scene, background);
+          createMountainSunriseBackground(scene);
           break;
         case "tropical-beach":
-          createTropicalBeachBackground(scene, background);
+          createTropicalBeachBackground(scene);
           break;
         case "cherry-blossom":
-          createCherryBlossomBackground(scene, background);
+          createCherryBlossomBackground(scene);
           break;
         case "northern-lights":
-          createNorthernLightsBackground(scene, background);
+          createNorthernLightsBackground(scene);
           break;
         case "underwater-coral":
-          createUnderwaterCoralBackground(scene, background);
+          createUnderwaterCoralBackground(scene);
           break;
         case "desert-sunset":
-          createDesertSunsetBackground(scene, background);
+          createDesertSunsetBackground(scene);
           break;
         case "bamboo-forest":
-          createBambooForestBackground(scene, background);
+          createBambooForestBackground(scene);
           break;
         case "alpine-lake":
-          createAlpineLakeBackground(scene, background);
+          createAlpineLakeBackground(scene);
           break;
         default:
-          createDefaultInteractiveBackground(scene, background);
+          createDefaultInteractiveBackground(scene);
           break;
       }
 
@@ -225,10 +221,7 @@ export default function BackgroundManager() {
       }
 
       if (savedCustomBackgrounds) {
-        allBackgrounds = [
-          ...allBackgrounds,
-          ...JSON.parse(savedCustomBackgrounds),
-        ];
+        allBackgrounds = [...allBackgrounds, ...JSON.parse(savedCustomBackgrounds)];
       }
 
       const activeBackground = allBackgrounds.find((bg) => bg.isActive);
@@ -278,11 +271,7 @@ export default function BackgroundManager() {
     };
   }, [loadActiveBackground]);
 
-  // All the interactive background creation functions
-  function createOceanWavesBackground(
-    container: HTMLElement,
-    background: Background
-  ) {
+  function createOceanWavesBackground(container: HTMLElement) {
     container.style.background =
       "linear-gradient(180deg, #87CEEB 0%, #4682B4 30%, #1E90FF 70%, #0066CC 100%)";
 
@@ -326,10 +315,7 @@ export default function BackgroundManager() {
     };
   }
 
-  function createForestRainBackground(
-    container: HTMLElement,
-    background: Background
-  ) {
+  function createForestRainBackground(container: HTMLElement) {
     container.style.background =
       "linear-gradient(180deg, #228B22 0%, #006400 50%, #2F4F2F 100%)";
 
@@ -370,14 +356,11 @@ export default function BackgroundManager() {
       clearInterval(rainInterval);
     };
   }
-  const createMountainSunriseBackground = (
-    container: HTMLElement,
-    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => {
+
+  function createMountainSunriseBackground(container: HTMLElement) {
     container.style.background =
       "linear-gradient(180deg, #FFB6C1 0%, #FFC0CB 30%, #F0E68C 70%, #98FB98 100%)";
 
-    // Add mountains
     for (let i = 0; i < 5; i++) {
       const mountain = document.createElement("div");
       mountain.className = "absolute";
@@ -391,7 +374,6 @@ export default function BackgroundManager() {
       container.appendChild(mountain);
     }
 
-    // Add sun
     const sun = document.createElement("div");
     sun.className = "absolute rounded-full";
     sun.style.width = "120px";
@@ -402,16 +384,12 @@ export default function BackgroundManager() {
     sun.style.boxShadow = "0 0 60px #FFD700, 0 0 120px #FF8C00";
     sun.style.animation = "sun-glow 4s ease-in-out infinite";
     container.appendChild(sun);
-  };
+  }
 
-  const createTropicalBeachBackground = (
-    container: HTMLElement,
-    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => {
+  function createTropicalBeachBackground(container: HTMLElement) {
     container.style.background =
       "linear-gradient(180deg, #87CEEB 0%, #98D8E8 30%, #F0E68C 70%, #DEB887 100%)";
 
-    // Palm trees
     for (let i = 0; i < 4; i++) {
       const palm = document.createElement("div");
       palm.className = "absolute";
@@ -427,7 +405,6 @@ export default function BackgroundManager() {
       }s ease-in-out infinite`;
       palm.style.transformOrigin = "bottom center";
 
-      // Palm fronds
       for (let j = 0; j < 6; j++) {
         const frond = document.createElement("div");
         frond.className = "absolute";
@@ -469,16 +446,12 @@ export default function BackgroundManager() {
 
     const waveInterval = setInterval(createWave, 2000);
     (container as CleanupElement).cleanup = () => clearInterval(waveInterval);
-  };
+  }
 
-  const createCherryBlossomBackground = (
-    container: HTMLElement,
-    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => {
+  function createCherryBlossomBackground(container: HTMLElement) {
     container.style.background =
       "linear-gradient(180deg, #FFB6C1 0%, #FFC0CB 30%, #F0E68C 70%, #98FB98 100%)";
 
-    // Cherry trees
     for (let i = 0; i < 6; i++) {
       const tree = document.createElement("div");
       tree.className = "absolute";
@@ -517,16 +490,12 @@ export default function BackgroundManager() {
 
     const petalInterval = setInterval(createPetal, 300);
     (container as CleanupElement).cleanup = () => clearInterval(petalInterval);
-  };
+  }
 
-  const createNorthernLightsBackground = (
-    container: HTMLElement,
-    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => {
+  function createNorthernLightsBackground(container: HTMLElement) {
     container.style.background =
       "linear-gradient(180deg, #000428 0%, #004e92 100%)";
 
-    // Stars
     for (let i = 0; i < 200; i++) {
       const star = document.createElement("div");
       star.className = "absolute rounded-full";
@@ -565,16 +534,12 @@ export default function BackgroundManager() {
     const auroraInterval = setInterval(createAurora, 3000);
     createAurora();
     (container as CleanupElement).cleanup = () => clearInterval(auroraInterval);
-  };
+  }
 
-  const createUnderwaterCoralBackground = (
-    container: HTMLElement,
-    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => {
+  function createUnderwaterCoralBackground(container: HTMLElement) {
     container.style.background =
       "linear-gradient(180deg, #006994 0%, #0077be 50%, #004d7a 100%)";
 
-    // Coral formations
     for (let i = 0; i < 8; i++) {
       const coral = document.createElement("div");
       coral.className = "absolute";
@@ -635,16 +600,12 @@ export default function BackgroundManager() {
       clearInterval(fishInterval);
       clearInterval(bubbleInterval);
     };
-  };
+  }
 
-  const createDesertSunsetBackground = (
-    container: HTMLElement,
-    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => {
+  function createDesertSunsetBackground(container: HTMLElement) {
     container.style.background =
       "linear-gradient(180deg, #FF6B35 0%, #F7931E 30%, #FFD23F 60%, #C4A484 100%)";
 
-    // Sand dunes
     for (let i = 0; i < 5; i++) {
       const dune = document.createElement("div");
       dune.className = "absolute";
@@ -658,7 +619,6 @@ export default function BackgroundManager() {
       container.appendChild(dune);
     }
 
-    // Sun
     const sun = document.createElement("div");
     sun.className = "absolute rounded-full";
     sun.style.width = "120px";
@@ -686,18 +646,13 @@ export default function BackgroundManager() {
     };
 
     const shimmerInterval = setInterval(createShimmer, 1000);
-    (container as CleanupElement).cleanup = () =>
-      clearInterval(shimmerInterval);
-  };
+    (container as CleanupElement).cleanup = () => clearInterval(shimmerInterval);
+  }
 
-  const createBambooForestBackground = (
-    container: HTMLElement,
-    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => {
+  function createBambooForestBackground(container: HTMLElement) {
     container.style.background =
       "linear-gradient(180deg, #90EE90 0%, #228B22 50%, #006400 100%)";
 
-    // Bamboo stalks
     for (let i = 0; i < 15; i++) {
       const bamboo = document.createElement("div");
       bamboo.className = "absolute";
@@ -711,7 +666,6 @@ export default function BackgroundManager() {
         4 + Math.random() * 2
       }s ease-in-out infinite`;
 
-      // Bamboo segments
       for (let j = 0; j < 8; j++) {
         const segment = document.createElement("div");
         segment.className = "absolute";
@@ -742,16 +696,12 @@ export default function BackgroundManager() {
     for (let i = 0; i < 8; i++) {
       setTimeout(() => createSunbeam(), i * 1000);
     }
-  };
+  }
 
-  const createAlpineLakeBackground = (
-    container: HTMLElement,
-    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => {
+  function createAlpineLakeBackground(container: HTMLElement) {
     container.style.background =
       "linear-gradient(180deg, #87CEEB 0%, #4682B4 30%, #1E90FF 70%, #0000CD 100%)";
 
-    // Mountains
     for (let i = 0; i < 6; i++) {
       const mountain = document.createElement("div");
       mountain.className = "absolute";
@@ -764,7 +714,6 @@ export default function BackgroundManager() {
       mountain.style.clipPath = "polygon(50% 0%, 0% 100%, 100% 100%)";
       container.appendChild(mountain);
 
-      // Snow caps
       const snowCap = document.createElement("div");
       snowCap.className = "absolute";
       snowCap.style.width = "60%";
@@ -791,16 +740,12 @@ export default function BackgroundManager() {
 
     const rippleInterval = setInterval(createRipple, 2000);
     (container as CleanupElement).cleanup = () => clearInterval(rippleInterval);
-  };
+  }
 
-  const createDefaultInteractiveBackground = (
-    container: HTMLElement,
-    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => {
+  function createDefaultInteractiveBackground(container: HTMLElement) {
     container.style.background =
       "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
 
-    // Add some animated particles
     for (let i = 0; i < 20; i++) {
       const particle = document.createElement("div");
       particle.className = "absolute rounded-full";
@@ -815,8 +760,7 @@ export default function BackgroundManager() {
       particle.style.animationDelay = `${Math.random() * 2}s`;
       container.appendChild(particle);
     }
-  };
-
+  }
   return (
     <>
       {isLoading && (
