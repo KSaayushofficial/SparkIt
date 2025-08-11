@@ -26,11 +26,193 @@ export default function BackgroundManager() {
   );
   const [isLoading, setIsLoading] = useState(false);
 
+  const clearBackground = useCallback(() => {
+    const container = document.getElementById("global-background-container");
+    if (!container) return;
+
+    Array.from(container.children).forEach((child) => {
+      const element = child as CleanupElement;
+      if (element.cleanup) {
+        element.cleanup();
+      }
+    });
+
+    container.innerHTML = "";
+  }, []);
+
+  const applyVideoBackground = useCallback(
+    async (container: HTMLElement, background: Background) => {
+      return new Promise<void>((resolve, reject) => {
+        const video = document.createElement("video");
+        video.className =
+          "absolute inset-0 w-full h-full object-cover transition-opacity duration-1000";
+        video.autoplay = true;
+        video.muted = !background.hasAudio;
+        video.loop = true;
+        video.playsInline = true;
+        video.style.opacity = (background.opacity / 100).toString();
+        video.style.filter = `blur(${background.blur}px)`;
+        video.playbackRate = background.speed;
+
+        if (background.hasAudio) {
+          const globalVolume =
+            localStorage.getItem("background-volume") || "50";
+          const isMuted = localStorage.getItem("background-muted") === "true";
+          video.volume = isMuted
+            ? 0
+            : (background.volume * Number.parseInt(globalVolume)) / 10000;
+        }
+
+        video.onloadeddata = () => {
+          container.appendChild(video);
+          resolve();
+        };
+
+        video.onerror = () => {
+          reject(new Error("Failed to load video"));
+        };
+
+        if (background.url) {
+          video.src = background.url;
+        } else {
+          video.src = "/placeholder.svg?height=1080&width=1920";
+        }
+      });
+    },
+    []
+  );
+
+  const applyImageBackground = useCallback(
+    async (container: HTMLElement, background: Background) => {
+      return new Promise<void>((resolve, reject) => {
+        const img = document.createElement("div");
+        img.className =
+          "absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000";
+        img.style.opacity = (background.opacity / 100).toString();
+        img.style.filter = `blur(${background.blur}px)`;
+
+        if (background.url) {
+          img.style.backgroundImage = `url(${background.url})`;
+        } else {
+          img.style.backgroundImage = `url(/placeholder.svg?height=1080&width=1920)`;
+        }
+
+        const preloadImg = new Image();
+        preloadImg.onload = () => {
+          container.appendChild(img);
+          resolve();
+        };
+        preloadImg.onerror = () => {
+          reject(new Error("Failed to load image"));
+        };
+        preloadImg.src =
+          background.url || "/placeholder.svg?height=1080&width=1920";
+      });
+    },
+    []
+  );
+
+  const applyInteractiveBackground = useCallback(
+    async (container: HTMLElement, background: Background) => {
+      const scene = document.createElement("div");
+      scene.className = "absolute inset-0 transition-opacity duration-1000";
+      scene.style.opacity = (background.opacity / 100).toString();
+      scene.style.filter = `blur(${background.blur}px)`;
+
+      switch (background.id) {
+        case "ocean-waves":
+          createOceanWavesBackground(scene, background);
+          break;
+        case "forest-rain":
+          createForestRainBackground(scene, background);
+          break;
+        case "mountain-sunrise":
+          createMountainSunriseBackground(scene, background);
+          break;
+        case "tropical-beach":
+          createTropicalBeachBackground(scene, background);
+          break;
+        case "cherry-blossom":
+          createCherryBlossomBackground(scene, background);
+          break;
+        case "northern-lights":
+          createNorthernLightsBackground(scene, background);
+          break;
+        case "underwater-coral":
+          createUnderwaterCoralBackground(scene, background);
+          break;
+        case "desert-sunset":
+          createDesertSunsetBackground(scene, background);
+          break;
+        case "bamboo-forest":
+          createBambooForestBackground(scene, background);
+          break;
+        case "alpine-lake":
+          createAlpineLakeBackground(scene, background);
+          break;
+        default:
+          createDefaultInteractiveBackground(scene, background);
+          break;
+      }
+
+      container.appendChild(scene);
+    },
+    []
+  );
+
+  const applyGeneratedBackground = useCallback(
+    async (container: HTMLElement, background: Background) => {
+      const gradient = document.createElement("div");
+      gradient.className = "absolute inset-0 transition-opacity duration-1000";
+      gradient.style.background =
+        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+      gradient.style.opacity = (background.opacity / 100).toString();
+      gradient.style.filter = `blur(${background.blur}px)`;
+
+      container.appendChild(gradient);
+    },
+    []
+  );
+
+  const applyBackground = useCallback(
+    async (background: Background) => {
+      const container = document.getElementById("global-background-container");
+      if (!container) return;
+
+      clearBackground();
+
+      try {
+        switch (background.type) {
+          case "video":
+            await applyVideoBackground(container, background);
+            break;
+          case "image":
+            await applyImageBackground(container, background);
+            break;
+          case "interactive":
+            await applyInteractiveBackground(container, background);
+            break;
+          case "generated":
+            await applyGeneratedBackground(container, background);
+            break;
+        }
+      } catch (error) {
+        console.error("Error applying background:", error);
+      }
+    },
+    [
+      clearBackground,
+      applyVideoBackground,
+      applyImageBackground,
+      applyInteractiveBackground,
+      applyGeneratedBackground,
+    ]
+  );
+
   const loadActiveBackground = useCallback(async () => {
     setIsLoading(true);
 
     try {
-      // Get saved backgrounds
       const savedBackgrounds = localStorage.getItem("dashboard-backgrounds");
       const savedCustomBackgrounds = localStorage.getItem(
         "dashboard-custom-backgrounds"
@@ -49,14 +231,12 @@ export default function BackgroundManager() {
         ];
       }
 
-      // Find active background
       const activeBackground = allBackgrounds.find((bg) => bg.isActive);
 
       if (activeBackground && activeBackground.id !== currentBackground?.id) {
         setCurrentBackground(activeBackground);
         await applyBackground(activeBackground);
       } else if (!activeBackground && currentBackground) {
-        // Clear background if none is active
         setCurrentBackground(null);
         clearBackground();
       }
@@ -65,13 +245,11 @@ export default function BackgroundManager() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentBackground]);
+  }, [currentBackground, applyBackground, clearBackground]);
 
   useEffect(() => {
-    // Load initial background
     loadActiveBackground();
 
-    // Listen for background changes
     const handleBackgroundChange = () => {
       loadActiveBackground();
     };
@@ -100,189 +278,11 @@ export default function BackgroundManager() {
     };
   }, [loadActiveBackground]);
 
-  const applyBackground = async (background: Background) => {
-    const container = document.getElementById("global-background-container");
-    if (!container) return;
-
-    // Clear existing background
-    clearBackground();
-
-    try {
-      switch (background.type) {
-        case "video":
-          await applyVideoBackground(container, background);
-          break;
-        case "image":
-          await applyImageBackground(container, background);
-          break;
-        case "interactive":
-          await applyInteractiveBackground(container, background);
-          break;
-        case "generated":
-          await applyGeneratedBackground(container, background);
-          break;
-      }
-    } catch (error) {
-      console.error("Error applying background:", error);
-    }
-  };
-
-  const clearBackground = () => {
-    const container = document.getElementById("global-background-container");
-    if (!container) return;
-
-    // Clean up existing content
-    Array.from(container.children).forEach((child) => {
-      const element = child as CleanupElement;
-      if (element.cleanup) {
-        element.cleanup();
-      }
-    });
-
-    container.innerHTML = "";
-  };
-
-  const applyVideoBackground = async (
+  // All the interactive background creation functions
+  function createOceanWavesBackground(
     container: HTMLElement,
     background: Background
-  ) => {
-    return new Promise<void>((resolve, reject) => {
-      const video = document.createElement("video");
-      video.className =
-        "absolute inset-0 w-full h-full object-cover transition-opacity duration-1000";
-      video.autoplay = true;
-      video.muted = !background.hasAudio;
-      video.loop = true;
-      video.playsInline = true;
-      video.style.opacity = (background.opacity / 100).toString();
-      video.style.filter = `blur(${background.blur}px)`;
-      video.playbackRate = background.speed;
-
-      if (background.hasAudio) {
-        const globalVolume = localStorage.getItem("background-volume") || "50";
-        const isMuted = localStorage.getItem("background-muted") === "true";
-        video.volume = isMuted
-          ? 0
-          : (background.volume * Number.parseInt(globalVolume)) / 10000;
-      }
-
-      video.onloadeddata = () => {
-        container.appendChild(video);
-        resolve();
-      };
-
-      video.onerror = () => {
-        reject(new Error("Failed to load video"));
-      };
-
-      if (background.url) {
-        video.src = background.url;
-      } else {
-        // Fallback to placeholder
-        video.src = "/placeholder.svg?height=1080&width=1920";
-      }
-    });
-  };
-
-  const applyImageBackground = async (
-    container: HTMLElement,
-    background: Background
-  ) => {
-    return new Promise<void>((resolve, reject) => {
-      const img = document.createElement("div");
-      img.className =
-        "absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000";
-      img.style.opacity = (background.opacity / 100).toString();
-      img.style.filter = `blur(${background.blur}px)`;
-
-      if (background.url) {
-        img.style.backgroundImage = `url(${background.url})`;
-      } else {
-        img.style.backgroundImage = `url(/placeholder.svg?height=1080&width=1920)`;
-      }
-
-      // Preload image
-      const preloadImg = new Image();
-      preloadImg.onload = () => {
-        container.appendChild(img);
-        resolve();
-      };
-      preloadImg.onerror = () => {
-        reject(new Error("Failed to load image"));
-      };
-      preloadImg.src =
-        background.url || "/placeholder.svg?height=1080&width=1920";
-    });
-  };
-
-  const applyInteractiveBackground = async (
-    container: HTMLElement,
-    background: Background
-  ) => {
-    const scene = document.createElement("div");
-    scene.className = "absolute inset-0 transition-opacity duration-1000";
-    scene.style.opacity = (background.opacity / 100).toString();
-    scene.style.filter = `blur(${background.blur}px)`;
-
-    // Create interactive background based on ID
-    switch (background.id) {
-      case "ocean-waves":
-        createOceanWavesBackground(scene, background);
-        break;
-      case "forest-rain":
-        createForestRainBackground(scene, background);
-        break;
-      case "mountain-sunrise":
-        createMountainSunriseBackground(scene, background);
-        break;
-      case "tropical-beach":
-        createTropicalBeachBackground(scene, background);
-        break;
-      case "cherry-blossom":
-        createCherryBlossomBackground(scene, background);
-        break;
-      case "northern-lights":
-        createNorthernLightsBackground(scene, background);
-        break;
-      case "underwater-coral":
-        createUnderwaterCoralBackground(scene, background);
-        break;
-      case "desert-sunset":
-        createDesertSunsetBackground(scene, background);
-        break;
-      case "bamboo-forest":
-        createBambooForestBackground(scene, background);
-        break;
-      case "alpine-lake":
-        createAlpineLakeBackground(scene, background);
-        break;
-      default:
-        createDefaultInteractiveBackground(scene, background);
-        break;
-    }
-
-    container.appendChild(scene);
-  };
-
-  const applyGeneratedBackground = async (
-    container: HTMLElement,
-    background: Background
-  ) => {
-    // Create a gradient background as fallback
-    const gradient = document.createElement("div");
-    gradient.className = "absolute inset-0 transition-opacity duration-1000";
-    gradient.style.background =
-      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
-    gradient.style.opacity = (background.opacity / 100).toString();
-    gradient.style.filter = `blur(${background.blur}px)`;
-
-    container.appendChild(gradient);
-  };
-
-  const createOceanWavesBackground = (
-    container: HTMLElement,
-    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => {
+  ) {
     container.style.background =
       "linear-gradient(180deg, #87CEEB 0%, #4682B4 30%, #1E90FF 70%, #0066CC 100%)";
 
@@ -314,31 +314,25 @@ export default function BackgroundManager() {
       container.appendChild(seagull);
     };
 
-    // Create initial waves
     for (let i = 0; i < 5; i++) {
       setTimeout(() => createWave(), i * 1000);
     }
 
-    // Create seagulls
     setInterval(createSeagull, 6000);
-
-    // Continuous wave creation
     const waveInterval = setInterval(createWave, 2000);
 
-    // Store cleanup function
     (container as CleanupElement).cleanup = () => {
       clearInterval(waveInterval);
     };
-  };
+  }
 
-  const createForestRainBackground = (
+  function createForestRainBackground(
     container: HTMLElement,
-    background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) => {
+    background: Background
+  ) {
     container.style.background =
       "linear-gradient(180deg, #228B22 0%, #006400 50%, #2F4F2F 100%)";
 
-    // Add trees
     for (let i = 0; i < 8; i++) {
       const tree = document.createElement("div");
       tree.className = "absolute";
@@ -375,8 +369,7 @@ export default function BackgroundManager() {
     (container as CleanupElement).cleanup = () => {
       clearInterval(rainInterval);
     };
-  };
-
+  }
   const createMountainSunriseBackground = (
     container: HTMLElement,
     background: Background // eslint-disable-line @typescript-eslint/no-unused-vars
