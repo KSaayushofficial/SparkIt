@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image"; // Import the Next.js Image component
 import {
   Play,
   Pause,
@@ -16,8 +17,16 @@ import {
 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 
+// Define a type for the notification object
+interface Notification {
+  type: "success" | "error" | "info" | "warning";
+  title: string;
+  message: string;
+}
+
+// Update the props interface to use the new Notification type
 interface StressSectionProps {
-  onNotification: (notification: any) => void;
+  onNotification: (notification: Notification) => void;
 }
 
 interface WellnessActivity {
@@ -383,12 +392,14 @@ export default function StressSection({ onNotification }: StressSectionProps) {
                 </button>
               </div>
 
-              {/* Visual Guide */}
+              {/* Visual Guide - Now using Next.js Image component */}
               <div className="flex-1 bg-black/20 rounded-lg overflow-hidden mb-4 flex items-center justify-center min-h-0">
-                <img
+                <Image
                   src={selectedActivity.videoUrl || "/placeholder.svg"}
                   alt={selectedActivity.name}
                   className="w-full h-full object-cover rounded-lg"
+                  width={400} // Specify width
+                  height={300} // Specify height
                 />
               </div>
 
@@ -487,10 +498,13 @@ export default function StressSection({ onNotification }: StressSectionProps) {
                 </div>
 
                 <div className="bg-black/20 rounded-lg p-6 mb-4">
-                  <img
+                  {/* Image tag replaced with Next.js Image component */}
+                  <Image
                     src={selectedActivity.imageUrl || "/placeholder.svg"}
                     alt={`Step ${currentStep + 1}`}
                     className="w-full h-48 object-cover rounded-lg mb-4"
+                    width={300} // Specify width
+                    height={200} // Specify height
                   />
                   <p className="text-white text-lg leading-relaxed">
                     {selectedActivity.steps[currentStep]}
@@ -635,12 +649,14 @@ export default function StressSection({ onNotification }: StressSectionProps) {
               >
                 <GlassPanel className="p-6 h-full" glow>
                   <div className="flex flex-col h-full">
-                    {/* Activity Image */}
+                    {/* Activity Image - Now using Next.js Image component */}
                     <div className="bg-black/20 rounded-lg overflow-hidden mb-4">
-                      <img
+                      <Image
                         src={activity.imageUrl || "/placeholder.svg"}
                         alt={activity.name}
                         className="w-full h-32 object-cover"
+                        width={300} // Specify width
+                        height={128} // Specify height
                       />
                     </div>
 

@@ -126,7 +126,22 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
     }
   }, [volume, isMuted]);
 
-  // Wrapped playNext in useCallback to stabilize reference for useEffect deps
+  // Memoize playTrack so it has stable identity
+  const playTrack = useCallback(
+    (trackId: string) => {
+      setCurrentTrack(trackId);
+      setCurrentTime(0);
+      setIsPlaying(true);
+      onNotification({
+        title: "Now Playing",
+        message: ambientSounds.find((s) => s.id === trackId)?.name || "",
+        type: "info",
+      });
+    },
+    [onNotification]
+  );
+
+  // Memoize playNext with dependencies including playTrack
   const playNext = useCallback(() => {
     const currentIndex = ambientSounds.findIndex(
       (sound) => sound.id === currentTrack
@@ -140,7 +155,7 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
     }
 
     playTrack(ambientSounds[nextIndex].id);
-  }, [currentTrack, isShuffled]);
+  }, [currentTrack, isShuffled, playTrack]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -173,17 +188,6 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
         });
       }
       return newState;
-    });
-  };
-
-  const playTrack = (trackId: string) => {
-    setCurrentTrack(trackId);
-    setCurrentTime(0);
-    setIsPlaying(true);
-    onNotification({
-      title: "Now Playing",
-      message: ambientSounds.find((s) => s.id === trackId)?.name || "",
-      type: "info",
     });
   };
 
