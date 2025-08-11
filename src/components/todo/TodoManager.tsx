@@ -1,15 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Clock, Bell, Play, Pause, Trash2, Check } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 import type { Todo } from "./types";
 
+interface NotificationPayload {
+  title: string;
+  message: string;
+  type: "alarm" | "info" | "success" | string;
+}
+
 interface TodoManagerProps {
   todos: Todo[];
   setTodos: (todos: Todo[]) => void;
-  onNotification: (notification: any) => void;
+  onNotification: (notification: NotificationPayload) => void;
 }
 
 export default function TodoManager({
@@ -22,10 +28,11 @@ export default function TodoManager({
     "medium"
   );
   const [newCategory, setNewCategory] = useState("Personal");
-  const [timers, setTimers] = useState<{ [key: string]: NodeJS.Timeout }>({});
-  const [alarmCheckers, setAlarmCheckers] = useState<{
-    [key: string]: NodeJS.Timeout;
-  }>({});
+
+  // Use ReturnType<typeof setInterval> for timers
+  const [timers, setTimers] = useState<
+    Record<string, ReturnType<typeof setInterval>>
+  >({});
 
   const categories = ["Personal", "Work", "Health", "Learning", "Shopping"];
   const priorityColors = {
@@ -34,13 +41,8 @@ export default function TodoManager({
     high: "from-red-500 to-pink-500",
   };
 
-  useEffect(() => {
-    // Check alarms every minute
-    const interval = setInterval(checkAlarms, 60000);
-    return () => clearInterval(interval);
-  }, [todos]);
-
-  const checkAlarms = () => {
+  // Wrap checkAlarms in useCallback so we can add it as a dependency in useEffect
+  const checkAlarms = useCallback(() => {
     const now = new Date();
     const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now
       .getMinutes()
@@ -52,22 +54,29 @@ export default function TodoManager({
         triggerAlarm(todo);
       }
     });
-  };
+  }, [todos]);
+
+  useEffect(() => {
+    const interval = setInterval(checkAlarms, 60000);
+    return () => clearInterval(interval);
+  }, [checkAlarms]);
 
   const triggerAlarm = (todo: Todo) => {
-    // Browser notification
-    if (Notification.permission === "granted") {
+    if (
+      typeof window !== "undefined" &&
+      Notification.permission === "granted"
+    ) {
       new Notification(`Task Reminder: ${todo.text}`, {
         body: `It's time to work on your ${todo.priority} priority task!`,
         icon: "/favicon.ico",
       });
     }
 
-    // Audio notification
     const audio = new Audio("/notification.mp3");
-    audio.play().catch(() => {});
+    audio.play().catch(() => {
+      /* ignore play errors */
+    });
 
-    // App notification
     onNotification({
       title: "Task Reminder",
       message: `Time to work on: ${todo.text}`,
@@ -111,11 +120,11 @@ export default function TodoManager({
     setTodos(todos.filter((todo) => todo.id !== id));
     if (timers[id]) {
       clearInterval(timers[id]);
-      delete timers[id];
-    }
-    if (alarmCheckers[id]) {
-      clearInterval(alarmCheckers[id]);
-      delete alarmCheckers[id];
+      setTimers((prev) => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
     }
   };
 
@@ -146,6 +155,7 @@ export default function TodoManager({
       );
     }
   };
+
 
   const setAlarm = (id: string, time: string) => {
     setTodos(
@@ -201,7 +211,9 @@ export default function TodoManager({
         <div className="flex gap-3">
           <select
             value={newPriority}
-            onChange={(e) => setNewPriority(e.target.value as any)}
+            onChange={(e) =>
+              setNewPriority(e.target.value as "low" | "medium" | "high")
+            }
             className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
           >
             <option value="low">Low Priority</option>

@@ -35,6 +35,11 @@ const colors = [
   "from-rose-500 to-pink-500",
 ];
 
+type HabitFromStorage = Omit<Habit, "completedDates" | "createdAt"> & {
+  completedDates: string[];
+  createdAt: string;
+};
+
 export default function HabitsSection({
   habits,
   setHabits,
@@ -52,10 +57,12 @@ export default function HabitsSection({
     const savedHabits = localStorage.getItem("habits");
     if (savedHabits) {
       try {
-        const parsedHabits = JSON.parse(savedHabits).map((habit: any) => ({
+        const parsedHabits = (
+          JSON.parse(savedHabits) as HabitFromStorage[]
+        ).map((habit) => ({
           ...habit,
           completedDates: habit.completedDates.map(
-            (dateStr: string) => new Date(dateStr)
+            (dateStr) => new Date(dateStr)
           ),
           createdAt: new Date(habit.createdAt),
         }));
@@ -64,7 +71,7 @@ export default function HabitsSection({
         console.error("Error parsing habits:", error);
       }
     }
-  }, []);
+  }, [setHabits]);
 
   // Save habits to localStorage
   useEffect(() => {
@@ -300,7 +307,11 @@ export default function HabitsSection({
 
                     <select
                       value={newDifficulty}
-                      onChange={(e) => setNewDifficulty(e.target.value as any)}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        setNewDifficulty(
+                          e.target.value as "easy" | "medium" | "hard"
+                        )
+                      }
                       className="bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                     >
                       <option value="easy" className="bg-gray-800">

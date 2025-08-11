@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
@@ -14,11 +14,24 @@ import {
 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 
-interface MusicSectionProps {
-  onNotification: (notification: any) => void;
+interface Notification {
+  title: string;
+  message: string;
+  type: "info" | "success" | "error" | "warning";
 }
 
-const ambientSounds = [
+interface MusicSectionProps {
+  onNotification: (notification: Notification) => void;
+}
+
+interface AmbientSound {
+  id: string;
+  name: string;
+  color: string;
+  duration: number; // seconds
+}
+
+const ambientSounds: AmbientSound[] = [
   {
     id: "rain",
     name: "Rain Sounds",
@@ -95,7 +108,7 @@ const ambientSounds = [
 
 export default function MusicSection({ onNotification }: MusicSectionProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState(ambientSounds[0].id);
+  const [currentTrack, setCurrentTrack] = useState<string>(ambientSounds[0].id);
   const [volume, setVolume] = useState(0.5);
   const [isMuted, setIsMuted] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
@@ -112,6 +125,22 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
       audioRef.current.volume = isMuted ? 0 : volume;
     }
   }, [volume, isMuted]);
+
+  // Wrapped playNext in useCallback to stabilize reference for useEffect deps
+  const playNext = useCallback(() => {
+    const currentIndex = ambientSounds.findIndex(
+      (sound) => sound.id === currentTrack
+    );
+    let nextIndex: number;
+
+    if (isShuffled) {
+      nextIndex = Math.floor(Math.random() * ambientSounds.length);
+    } else {
+      nextIndex = (currentIndex + 1) % ambientSounds.length;
+    }
+
+    playTrack(ambientSounds[nextIndex].id);
+  }, [currentTrack, isShuffled]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -131,17 +160,20 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, currentSound, isRepeating]);
+  }, [isPlaying, currentSound, isRepeating, playNext]);
 
   const togglePlay = () => {
-    setIsPlaying(!isPlaying);
-    if (!isPlaying) {
-      onNotification({
-        title: "Now Playing",
-        message: currentSound.name,
-        type: "info",
-      });
-    }
+    setIsPlaying((prev) => {
+      const newState = !prev;
+      if (newState) {
+        onNotification({
+          title: "Now Playing",
+          message: currentSound.name,
+          type: "info",
+        });
+      }
+      return newState;
+    });
   };
 
   const playTrack = (trackId: string) => {
@@ -153,21 +185,6 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
       message: ambientSounds.find((s) => s.id === trackId)?.name || "",
       type: "info",
     });
-  };
-
-  const playNext = () => {
-    const currentIndex = ambientSounds.findIndex(
-      (sound) => sound.id === currentTrack
-    );
-    let nextIndex;
-
-    if (isShuffled) {
-      nextIndex = Math.floor(Math.random() * ambientSounds.length);
-    } else {
-      nextIndex = (currentIndex + 1) % ambientSounds.length;
-    }
-
-    playTrack(ambientSounds[nextIndex].id);
   };
 
   const playPrevious = () => {
@@ -234,10 +251,7 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
                             {isPlaying && currentTrack === sound.id ? (
                               <motion.div
                                 animate={{ scale: [1, 1.2, 1] }}
-                                transition={{
-                                  duration: 1,
-                                  repeat: Number.POSITIVE_INFINITY,
-                                }}
+                                transition={{ duration: 1, repeat: Infinity }}
                               >
                                 <Volume2 size={20} className="text-white" />
                               </motion.div>
@@ -289,7 +303,7 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
                       animate={{ rotate: isPlaying ? 360 : 0 }}
                       transition={{
                         duration: 20,
-                        repeat: isPlaying ? Number.POSITIVE_INFINITY : 0,
+                        repeat: isPlaying ? Infinity : 0,
                         ease: "linear",
                       }}
                       className={`w-32 h-32 rounded-full bg-gradient-to-br ${currentSound.color} flex items-center justify-center shadow-lg`}
@@ -299,10 +313,7 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
                     {isPlaying && (
                       <motion.div
                         animate={{ scale: [1, 1.1, 1] }}
-                        transition={{
-                          duration: 2,
-                          repeat: Number.POSITIVE_INFINITY,
-                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
                         className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent"
                       />
                     )}
@@ -406,9 +417,7 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
                       max="1"
                       step="0.1"
                       value={volume}
-                      onChange={(e) =>
-                        setVolume(Number.parseFloat(e.target.value))
-                      }
+                      onChange={(e) => setVolume(parseFloat(e.target.value))}
                       className="flex-1 accent-blue-500"
                     />
                     <span className="text-white/70 text-sm w-8">

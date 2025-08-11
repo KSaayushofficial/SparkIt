@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import type { Todo, Notification } from "@/components/dashboard/types";
 
 interface GlobalTodoManagerProps {
@@ -11,21 +11,38 @@ interface GlobalTodoManagerProps {
   ) => void;
 }
 
+// Extend Window interface globally for todoTimers and AudioContext vendor prefix
+declare global {
+  interface Window {
+    todoTimers?: {
+      start: (todoId: string, durationSeconds: number) => void;
+      stop: (todoId: string) => void;
+    };
+    webkitAudioContext?: typeof AudioContext;
+  }
+}
+
 export default function GlobalTodoManager({
   todos,
   setTodos,
   onNotification,
 }: GlobalTodoManagerProps) {
-  const timersRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
-  const alarmCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // timersRef maps todo ID to timeout handle
+  const timersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const alarmCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
   const triggeredAlarmsRef = useRef<Set<string>>(new Set());
 
-  // Create a simple beep sound programmatically
+  // Create beep sound programmatically
   const createBeepSound = () => {
     if (typeof window !== "undefined" && "AudioContext" in window) {
       try {
-        const audioContext = new (window.AudioContext ||
-          (window as any).webkitAudioContext)();
+        // Use prefixed AudioContext for Safari compatibility
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+
+        const audioContext = new AudioCtx();
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
 
@@ -50,13 +67,13 @@ export default function GlobalTodoManager({
   };
 
   const playAlarmSound = () => {
-    // Play multiple beeps for alarm
     createBeepSound();
     setTimeout(() => createBeepSound(), 200);
     setTimeout(() => createBeepSound(), 400);
   };
 
-  const checkForAlarms = () => {
+  // Wrap checkForAlarms in useCallback so it can be added as effect dependency
+  const checkForAlarms = useCallback(() => {
     const now = new Date();
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
@@ -72,14 +89,11 @@ export default function GlobalTodoManager({
       ) {
         const alarmKey = `${todo.id}-${now.toDateString()}`;
 
-        // Check if we haven't already triggered this alarm today
         if (!triggeredAlarmsRef.current.has(alarmKey)) {
           triggeredAlarmsRef.current.add(alarmKey);
 
-          // Play alarm sound
           playAlarmSound();
 
-          // Show browser notification if permission granted
           if (
             typeof window !== "undefined" &&
             "Notification" in window &&
@@ -94,7 +108,6 @@ export default function GlobalTodoManager({
             });
           }
 
-          // Show app notification with enhanced details
           onNotification({
             type: "alarm",
             title: "⏰ Todo Timer Complete!",
@@ -103,14 +116,12 @@ export default function GlobalTodoManager({
             } min timer finished! Time to take action!`,
           });
 
-          // Update todo to stop timer
-          setTodos(
-            todos.map((t: Todo) =>
+          setTodos((prevTodos) =>
+            prevTodos.map((t) =>
               t.id === todo.id ? { ...t, isTimerRunning: false } : t
             )
           );
 
-          // Create visual alarm indicator
           const todoElement = document.getElementById(`todo-${todo.id}`);
           if (todoElement) {
             todoElement.classList.add("animate-pulse");
@@ -125,10 +136,10 @@ export default function GlobalTodoManager({
         }
       }
     });
-  };
+  }, [todos, onNotification, setTodos]);
 
+  // Request permission and set interval for alarm checking
   useEffect(() => {
-    // Request notification permission on mount
     if (
       typeof window !== "undefined" &&
       "Notification" in window &&
@@ -137,10 +148,9 @@ export default function GlobalTodoManager({
       Notification.requestPermission();
     }
 
-    // Check for alarms every minute
     alarmCheckIntervalRef.current = setInterval(checkForAlarms, 60000);
 
-    // Also check immediately
+    // Check immediately on mount
     checkForAlarms();
 
     return () => {
@@ -148,9 +158,9 @@ export default function GlobalTodoManager({
         clearInterval(alarmCheckIntervalRef.current);
       }
     };
-  }, [todos, onNotification]);
+  }, [checkForAlarms]);
 
-  // Clear triggered alarms at midnight
+  // Clear triggered alarms at midnight and daily after
   useEffect(() => {
     const now = new Date();
     const tomorrow = new Date(now);
@@ -162,7 +172,6 @@ export default function GlobalTodoManager({
     const midnightTimer = setTimeout(() => {
       triggeredAlarmsRef.current.clear();
 
-      // Set up daily clearing
       const dailyTimer = setInterval(() => {
         triggeredAlarmsRef.current.clear();
       }, 24 * 60 * 60 * 1000);
@@ -173,95 +182,94 @@ export default function GlobalTodoManager({
     return () => clearTimeout(midnightTimer);
   }, []);
 
-  const startTimer = (todoId: string, duration: number) => {
-    // Clear existing timer if any
-    if (timersRef.current[todoId]) {
-      clearTimeout(timersRef.current[todoId]);
-    }
-
-    // Update todo to show timer is running
-    setTodos(
-      todos.map((todo: Todo) =>
-        todo.id === todoId ? { ...todo, isTimerRunning: true } : todo
-      )
-    );
-
-    // Start new timer
-    timersRef.current[todoId] = setTimeout(() => {
-      playAlarmSound();
-
-      const todo = todos.find((t) => t.id === todoId);
-
-      // Enhanced notification with more details
-      onNotification({
-        type: "success",
-        title: "🎯 Timer Complete!",
-        message: `"${todo?.text || "Unknown task"}" - ${Math.round(
-          duration / 60
-        )} minute timer finished! Great focus session!`,
-      });
-
-      // Show browser notification
-      if (
-        typeof window !== "undefined" &&
-        "Notification" in window &&
-        Notification.permission === "granted"
-      ) {
-        new Notification(`🎯 Timer Complete: ${todo?.text}`, {
-          body: `Your ${Math.round(
-            duration / 60
-          )} minute focus session is complete!`,
-          icon: "/favicon.ico",
-        });
+  // Memoize startTimer and stopTimer for useEffect dependencies
+  const startTimer = useCallback(
+    (todoId: string, duration: number) => {
+      if (timersRef.current[todoId]) {
+        clearTimeout(timersRef.current[todoId]);
       }
 
-      // Update todo to stop timer
-      setTodos((prevTodos: Todo[]) =>
-        prevTodos.map((t: Todo) =>
-          t.id === todoId ? { ...t, isTimerRunning: false } : t
+      setTodos((prevTodos) =>
+        prevTodos.map((todo) =>
+          todo.id === todoId ? { ...todo, isTimerRunning: true } : todo
         )
       );
 
-      // Remove timer from ref
-      delete timersRef.current[todoId];
+      timersRef.current[todoId] = setTimeout(() => {
+        playAlarmSound();
 
-      // Visual feedback
-      const todoElement = document.getElementById(`todo-${todoId}`);
-      if (todoElement) {
-        todoElement.style.boxShadow = "0 0 20px rgba(34, 197, 94, 0.8)";
-        todoElement.style.borderColor = "rgb(34, 197, 94)";
-        setTimeout(() => {
-          todoElement.style.boxShadow = "";
-          todoElement.style.borderColor = "";
-        }, 5000);
+        const todo = todos.find((t) => t.id === todoId);
+
+        onNotification({
+          type: "success",
+          title: "🎯 Timer Complete!",
+          message: `"${todo?.text || "Unknown task"}" - ${Math.round(
+            duration / 60
+          )} minute timer finished! Great focus session!`,
+        });
+
+        if (
+          typeof window !== "undefined" &&
+          "Notification" in window &&
+          Notification.permission === "granted"
+        ) {
+          new Notification(`🎯 Timer Complete: ${todo?.text}`, {
+            body: `Your ${Math.round(
+              duration / 60
+            )} minute focus session is complete!`,
+            icon: "/favicon.ico",
+          });
+        }
+
+        setTodos((prevTodos) =>
+          prevTodos.map((t) =>
+            t.id === todoId ? { ...t, isTimerRunning: false } : t
+          )
+        );
+
+        delete timersRef.current[todoId];
+
+        const todoElement = document.getElementById(`todo-${todoId}`);
+        if (todoElement) {
+          todoElement.style.boxShadow = "0 0 20px rgba(34, 197, 94, 0.8)";
+          todoElement.style.borderColor = "rgb(34, 197, 94)";
+          setTimeout(() => {
+            todoElement.style.boxShadow = "";
+            todoElement.style.borderColor = "";
+          }, 5000);
+        }
+      }, duration * 1000);
+    },
+    [todos, onNotification, setTodos]
+  );
+
+  const stopTimer = useCallback(
+    (todoId: string) => {
+      if (timersRef.current[todoId]) {
+        clearTimeout(timersRef.current[todoId]);
+        delete timersRef.current[todoId];
       }
-    }, duration * 1000);
-  };
 
-  const stopTimer = (todoId: string) => {
-    if (timersRef.current[todoId]) {
-      clearTimeout(timersRef.current[todoId]);
-      delete timersRef.current[todoId];
-    }
+      setTodos((prevTodos) =>
+        prevTodos.map((todo) =>
+          todo.id === todoId ? { ...todo, isTimerRunning: false } : todo
+        )
+      );
 
-    // Update todo to show timer is stopped
-    setTodos((prevTodos: Todo[]) =>
-      prevTodos.map((todo: Todo) =>
-        todo.id === todoId ? { ...todo, isTimerRunning: false } : todo
-      )
-    );
+      onNotification({
+        type: "info",
+        title: "⏸️ Timer Stopped",
+        message: "Focus session paused. You can restart it anytime!",
+      });
+    },
+    [setTodos, onNotification]
+  );
 
-    onNotification({
-      type: "info",
-      title: "⏸️ Timer Stopped",
-      message: "Focus session paused. You can restart it anytime!",
-    });
-  };
-
-  // Cleanup on unmount
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
-      Object.values(timersRef.current).forEach((timer) => clearTimeout(timer));
+      const timers = { ...timersRef.current }; // copy current timers to avoid stale ref in cleanup
+      Object.values(timers).forEach((timer) => clearTimeout(timer));
       if (alarmCheckIntervalRef.current) {
         clearInterval(alarmCheckIntervalRef.current);
       }
@@ -271,12 +279,12 @@ export default function GlobalTodoManager({
   // Expose timer functions globally for other components to use
   useEffect(() => {
     if (typeof window !== "undefined") {
-      (window as any).todoTimers = {
+      window.todoTimers = {
         start: startTimer,
         stop: stopTimer,
       };
     }
-  }, []);
+  }, [startTimer, stopTimer]);
 
-  return null; // This component doesn't render anything visible
+  return null; // No UI
 }

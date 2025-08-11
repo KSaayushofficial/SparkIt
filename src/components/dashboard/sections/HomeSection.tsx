@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Quote,
@@ -110,14 +110,13 @@ export default function HomeSection({ onNotification }: HomeSectionProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  const refreshQuote = () => {
+  const refreshQuote = useCallback(() => {
     setIsRefreshing(true);
 
     setTimeout(() => {
       const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
       const newQuote = motivationalQuotes[randomIndex];
 
-      // Ensure we don't get the same quote twice in a row
       if (
         newQuote.text === currentQuote.text &&
         motivationalQuotes.length > 1
@@ -141,7 +140,7 @@ export default function HomeSection({ onNotification }: HomeSectionProps) {
         message: "Fresh motivation delivered!",
       });
     }, 500);
-  };
+  }, [currentQuote, onNotification]);
 
   useEffect(() => {
     // Update time every second

@@ -26,10 +26,16 @@ import {
 import GlassPanel from "@/components/ui/GlassPanel";
 import type { Todo } from "../types";
 
+interface Notification {
+  type: "success" | "info" | "error" | string;
+  title: string;
+  message: string;
+}
+
 interface TodoSectionProps {
   todos: Todo[];
   setTodos: (todos: Todo[]) => void;
-  onNotification: (notification: any) => void;
+  onNotification: (notification: Notification) => void;
 }
 
 const priorities = ["low", "medium", "high"] as const;
@@ -40,7 +46,20 @@ const categories = [
   "Learning",
   "Shopping",
   "Other",
-];
+] as const;
+
+// Declare a type for your global todoTimers object to avoid `any`
+interface TodoTimers {
+  start: (id: string, seconds: number) => void;
+  stop: (id: string) => void;
+}
+
+// Extend the Window interface globally (you can move this to a types.d.ts)
+declare global {
+  interface Window {
+    todoTimers?: TodoTimers;
+  }
+}
 
 export default function TodoSection({
   todos,
@@ -48,10 +67,10 @@ export default function TodoSection({
   onNotification,
 }: TodoSectionProps) {
   const [newTodo, setNewTodo] = useState("");
-  const [newPriority, setNewPriority] = useState<"low" | "medium" | "high">(
-    "medium"
-  );
-  const [newCategory, setNewCategory] = useState("Personal");
+  const [newPriority, setNewPriority] =
+    useState<(typeof priorities)[number]>("medium");
+  const [newCategory, setNewCategory] =
+    useState<(typeof categories)[number]>("Personal");
   const [timerMinutes, setTimerMinutes] = useState(25);
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -72,7 +91,7 @@ export default function TodoSection({
       createdAt: now,
       timer: timerMinutes,
       isTimerRunning: true,
-      alarm: true, // Set to true since the type expects boolean
+      alarm: true,
       hasAlarm: true,
       tags: [],
       estimatedTime: timerMinutes,
@@ -97,8 +116,8 @@ export default function TodoSection({
     setTimerMinutes(25);
 
     // Start the global timer for this todo
-    if (typeof window !== "undefined" && (window as any).todoTimers) {
-      (window as any).todoTimers.start(todo.id, timerMinutes * 60);
+    if (typeof window !== "undefined" && window.todoTimers) {
+      window.todoTimers.start(todo.id, timerMinutes * 60);
     }
   };
 
@@ -115,9 +134,9 @@ export default function TodoSection({
         if (
           updated.completed &&
           typeof window !== "undefined" &&
-          (window as any).todoTimers
+          window.todoTimers
         ) {
-          (window as any).todoTimers.stop(id);
+          window.todoTimers.stop(id);
           updated.isTimerRunning = false;
         }
 
@@ -138,9 +157,8 @@ export default function TodoSection({
   };
 
   const deleteTodo = (id: string) => {
-    // Stop any running timer
-    if (typeof window !== "undefined" && (window as any).todoTimers) {
-      (window as any).todoTimers.stop(id);
+    if (typeof window !== "undefined" && window.todoTimers) {
+      window.todoTimers.stop(id);
     }
 
     const updatedTodos = todos.filter((todo) => todo.id !== id);
@@ -162,9 +180,8 @@ export default function TodoSection({
     });
     setTodos(updatedTodos);
 
-    // Start global timer
-    if (typeof window !== "undefined" && (window as any).todoTimers) {
-      (window as any).todoTimers.start(todoId, minutes * 60);
+    if (typeof window !== "undefined" && window.todoTimers) {
+      window.todoTimers.start(todoId, minutes * 60);
     }
   };
 
@@ -177,9 +194,8 @@ export default function TodoSection({
     });
     setTodos(updatedTodos);
 
-    // Stop global timer
-    if (typeof window !== "undefined" && (window as any).todoTimers) {
-      (window as any).todoTimers.stop(todoId);
+    if (typeof window !== "undefined" && window.todoTimers) {
+      window.todoTimers.stop(todoId);
     }
   };
 
@@ -301,7 +317,9 @@ export default function TodoSection({
 
               <Select
                 value={newPriority}
-                onValueChange={(value: any) => setNewPriority(value)}
+                onValueChange={(value: (typeof priorities)[number]) =>
+                  setNewPriority(value)
+                }
               >
                 <SelectTrigger className="bg-white/10 border-white/20 text-white">
                   <SelectValue placeholder="Priority" />
@@ -315,7 +333,12 @@ export default function TodoSection({
                 </SelectContent>
               </Select>
 
-              <Select value={newCategory} onValueChange={setNewCategory}>
+              <Select
+                value={newCategory}
+                onValueChange={(value: (typeof categories)[number]) =>
+                  setNewCategory(value)
+                }
+              >
                 <SelectTrigger className="bg-white/10 border-white/20 text-white">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
@@ -336,8 +359,8 @@ export default function TodoSection({
                   </span>
                   <Input
                     type="number"
-                    min="1"
-                    max="480"
+                    min={1}
+                    max={480}
                     value={timerMinutes}
                     onChange={(e) =>
                       setTimerMinutes(Number.parseInt(e.target.value) || 25)
@@ -367,7 +390,10 @@ export default function TodoSection({
               <span className="text-sm font-medium text-white">Filters:</span>
             </div>
 
-            <Select value={filterPriority} onValueChange={setFilterPriority}>
+            <Select
+              value={filterPriority}
+              onValueChange={(value: string) => setFilterPriority(value)}
+            >
               <SelectTrigger className="w-32 bg-white/10 border-white/20 text-white">
                 <SelectValue />
               </SelectTrigger>
@@ -381,7 +407,10 @@ export default function TodoSection({
               </SelectContent>
             </Select>
 
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <Select
+              value={filterCategory}
+              onValueChange={(value: string) => setFilterCategory(value)}
+            >
               <SelectTrigger className="w-32 bg-white/10 border-white/20 text-white">
                 <SelectValue />
               </SelectTrigger>
@@ -489,7 +518,7 @@ export default function TodoSection({
                       {todo.alarm && (
                         <div className="flex items-center gap-1">
                           <Bell className="h-3 w-3" />
-                          Alarm: {todo.alarm}
+                          Alarm: {todo.alarm.toString()}
                         </div>
                       )}
 
