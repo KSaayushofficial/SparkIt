@@ -17,7 +17,7 @@ import type {
   Goal,
   Notification,
 } from "@/components/dashboard/types";
-
+import TodoPopupWidget from "../TodoPopupWidget";
 
 interface HomeSectionProps {
   todos: Todo[];
@@ -191,7 +191,6 @@ return (
   <div className="min-h-screen w-full px-6 py-4 flex flex-col justify-between">
     {" "}
 
-    {/* Changed to justify-between */}
     <div className="flex flex-col gap-6">
       <div className="text-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">

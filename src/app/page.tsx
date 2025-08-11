@@ -23,6 +23,7 @@ import type {
   Milestone,
 } from "@/components/dashboard/types";
 
+
 // Define types for the parsed localStorage data
 interface ParsedTodo extends Omit<Todo, 'createdAt' | 'completedAt' | 'dueDate'> {
   createdAt: string;
@@ -210,7 +211,7 @@ export default function Dashboard() {
             setTodos={handleSetTodos}
             onNotification={addNotification}
           />
-        );
+        ); 
       case "habits":
         return (
           <HabitsSection

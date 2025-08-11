@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface Effect {
   id: string;
@@ -18,18 +18,19 @@ interface Effect {
   interactive: boolean;
 }
 
+interface EffectContainer extends HTMLDivElement {
+  cleanup?: () => void;
+  timers?: (NodeJS.Timeout | number)[];
+}
+
 export default function EffectsManager() {
   const [activeEffects, setActiveEffects] = useState<Effect[]>([]);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [effectIntervals, setEffectIntervals] = useState<
-    Map<string, NodeJS.Timeout>
-  >(new Map());
+  const timersRef = useRef<Map<string, NodeJS.Timeout | number>>(new Map());
 
   useEffect(() => {
-    // Load initial effects
     loadActiveEffects();
 
-    // Listen for effects changes
     const handleEffectsChange = () => {
       loadActiveEffects();
     };
@@ -64,9 +65,7 @@ export default function EffectsManager() {
         "effectsPlaybackToggle",
         handlePlaybackToggle as EventListener
       );
-
-      // Cleanup all intervals
-      effectIntervals.forEach((interval) => clearInterval(interval));
+      clearAllEffects();
     };
   }, []);
 
@@ -101,10 +100,8 @@ export default function EffectsManager() {
     const container = document.getElementById("global-effects-container");
     if (!container) return;
 
-    // Clear existing effects and intervals
     clearAllEffects();
 
-    // Apply each active effect
     activeEffects.forEach((effect) => {
       createGlobalEffect(container, effect);
     });
@@ -113,7 +110,6 @@ export default function EffectsManager() {
   const clearAllEffects = () => {
     const container = document.getElementById("global-effects-container");
     if (container) {
-      // Clean up existing effects
       Array.from(container.children).forEach((child) => {
         if ((child as any).cleanup) {
           (child as any).cleanup();
@@ -121,10 +117,11 @@ export default function EffectsManager() {
       });
       container.innerHTML = "";
     }
-
-    // Clear all intervals
-    effectIntervals.forEach((interval) => clearInterval(interval));
-    setEffectIntervals(new Map());
+    timersRef.current.forEach((timer) => {
+      clearTimeout(timer);
+      clearInterval(timer as any);
+    });
+    timersRef.current.clear();
   };
 
   const pauseAllEffects = () => {
@@ -134,17 +131,11 @@ export default function EffectsManager() {
     }
   };
 
-  const resumeAllEffects = () => {
-    const container = document.getElementById("global-effects-container");
-    if (container) {
-      container.style.display = "block";
-    }
-  };
-
   const createGlobalEffect = (container: HTMLElement, effect: Effect) => {
     const effectContainer = document.createElement("div");
     effectContainer.className = "absolute inset-0 pointer-events-none";
     effectContainer.id = `global-effect-${effect.id}`;
+    (effectContainer as any).timers = [];
 
     switch (effect.id) {
       case "rain":
@@ -250,8 +241,9 @@ export default function EffectsManager() {
     container.appendChild(effectContainer);
   };
 
-  // Effect creation functions with consistent timing and cleanup
   const createRainEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
@@ -277,7 +269,7 @@ export default function EffectsManager() {
 
       container.appendChild(drop);
 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (effect.physics) {
           createRainSplash(
             container,
@@ -287,27 +279,24 @@ export default function EffectsManager() {
         }
         drop.remove();
       }, 3000 / effect.speed);
+      timers.push(timer);
     };
 
-    // Create initial raindrops
     for (let i = 0; i < Math.min(particleCount, 100); i++) {
-      setTimeout(() => createRaindrop(), Math.random() * 2000);
+      const timer = setTimeout(() => createRaindrop(), Math.random() * 2000);
+      timers.push(timer);
     }
 
-    // Continue creating raindrops
     const interval = setInterval(
       createRaindrop,
       Math.max(50, 200 - effect.intensity * 2)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
 
-    // Store cleanup function
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
@@ -335,6 +324,8 @@ export default function EffectsManager() {
   };
 
   const createSnowEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
@@ -360,29 +351,33 @@ export default function EffectsManager() {
       }ms linear forwards`;
 
       container.appendChild(flake);
-      setTimeout(() => flake.remove(), 5000 / effect.speed);
+      const timer = setTimeout(() => flake.remove(), 5000 / effect.speed);
+      timers.push(timer);
     };
 
     for (let i = 0; i < Math.min(particleCount, 80); i++) {
-      setTimeout(() => createSnowflake(), Math.random() * 3000);
+      const timer = setTimeout(() => createSnowflake(), Math.random() * 3000);
+      timers.push(timer);
     }
 
     const interval = setInterval(
       createSnowflake,
       Math.max(100, 300 - effect.intensity * 2)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
 
   const createLightningEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createLightning = () => {
       const lightning = document.createElement("div");
       lightning.className = "absolute";
@@ -395,7 +390,6 @@ export default function EffectsManager() {
       lightning.style.filter = "blur(1px)";
       lightning.style.zIndex = "100";
 
-      // Create branching
       for (let i = 0; i < 5; i++) {
         const branch = document.createElement("div");
         branch.className = "absolute";
@@ -413,7 +407,6 @@ export default function EffectsManager() {
 
       container.appendChild(lightning);
 
-      // Screen flash
       const flash = document.createElement("div");
       flash.className = "absolute inset-0";
       flash.style.background = `radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(230,230,255,0.3) 50%, transparent 100%)`;
@@ -421,10 +414,11 @@ export default function EffectsManager() {
       flash.style.zIndex = "99";
       container.appendChild(flash);
 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         lightning.remove();
         flash.remove();
       }, 800);
+      timers.push(timer);
     };
 
     const scheduleNextLightning = () => {
@@ -433,27 +427,22 @@ export default function EffectsManager() {
         createLightning();
         scheduleNextLightning();
       }, delay);
-
-      setEffectIntervals((prev) =>
-        new Map(prev).set(`${effect.id}-lightning`, timeout)
-      );
+      timers.push(timeout);
     };
 
     scheduleNextLightning();
+
     (container as any).cleanup = () => {
-      const timeout = effectIntervals.get(`${effect.id}-lightning`);
-      if (timeout) {
-        clearTimeout(timeout);
-        setEffectIntervals((prev) => {
-          const newMap = new Map(prev);
-          newMap.delete(`${effect.id}-lightning`);
-          return newMap;
-        });
-      }
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
+      });
     };
   };
 
   const createFirefliesEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
@@ -474,7 +463,6 @@ export default function EffectsManager() {
       }s ease-in-out infinite`;
       firefly.style.animationDelay = `${Math.random() * 2}s`;
 
-      // Movement
       const moveFirefly = () => {
         const newX = Math.random() * 100;
         const newY = Math.random() * 100;
@@ -484,26 +472,19 @@ export default function EffectsManager() {
         firefly.style.top = `${newY}%`;
 
         const timeout = setTimeout(moveFirefly, duration * 1000);
-        setEffectIntervals((prev) =>
-          new Map(prev).set(`${effect.id}-firefly-${i}`, timeout)
-        );
+        timers.push(timeout);
       };
 
-      setTimeout(moveFirefly, Math.random() * 2000);
+      const timer = setTimeout(moveFirefly, Math.random() * 2000);
+      timers.push(timer);
       container.appendChild(firefly);
     }
+
     (container as any).cleanup = () => {
-      for (let i = 0; i < particleCount; i++) {
-        const timeout = effectIntervals.get(`${effect.id}-firefly-${i}`);
-        if (timeout) {
-          clearTimeout(timeout);
-          setEffectIntervals((prev) => {
-            const newMap = new Map(prev);
-            newMap.delete(`${effect.id}-firefly-${i}`);
-            return newMap;
-          });
-        }
-      }
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
+      });
     };
   };
 
@@ -534,6 +515,8 @@ export default function EffectsManager() {
   };
 
   const createAutumnLeavesEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
     const leafEmojis = ["🍂", "🍁", "🍃", "🌿"];
 
     const createLeaf = () => {
@@ -558,27 +541,28 @@ export default function EffectsManager() {
       leaf.style.animation = `autumn-leaf-fall ${duration}ms ease-out forwards`;
 
       container.appendChild(leaf);
-      setTimeout(() => leaf.remove(), duration);
+      const timer = setTimeout(() => leaf.remove(), duration);
+      timers.push(timer);
     };
 
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
     for (let i = 0; i < Math.min(particleCount, 60); i++) {
-      setTimeout(() => createLeaf(), Math.random() * 2000);
+      const timer = setTimeout(() => createLeaf(), Math.random() * 2000);
+      timers.push(timer);
     }
 
     const interval = setInterval(
       createLeaf,
       Math.max(200, 600 - effect.intensity * 4)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
@@ -587,6 +571,9 @@ export default function EffectsManager() {
     container: HTMLElement,
     effect: Effect
   ) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createPetal = () => {
       const petal = document.createElement("div");
       petal.innerHTML = "🌸";
@@ -608,27 +595,28 @@ export default function EffectsManager() {
       petal.style.animation = `petal-fall ${duration}ms ease-out forwards`;
 
       container.appendChild(petal);
-      setTimeout(() => petal.remove(), duration);
+      const timer = setTimeout(() => petal.remove(), duration);
+      timers.push(timer);
     };
 
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
     for (let i = 0; i < Math.min(particleCount, 50); i++) {
-      setTimeout(() => createPetal(), Math.random() * 2000);
+      const timer = setTimeout(() => createPetal(), Math.random() * 2000);
+      timers.push(timer);
     }
 
     const interval = setInterval(
       createPetal,
       Math.max(300, 700 - effect.intensity * 4)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
@@ -637,6 +625,9 @@ export default function EffectsManager() {
     container: HTMLElement,
     effect: Effect
   ) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createSeed = () => {
       const seed = document.createElement("div");
       seed.innerHTML = "🌾";
@@ -656,27 +647,28 @@ export default function EffectsManager() {
       seed.style.animation = `seed-float ${duration}ms ease-out forwards`;
 
       container.appendChild(seed);
-      setTimeout(() => seed.remove(), duration);
+      const timer = setTimeout(() => seed.remove(), duration);
+      timers.push(timer);
     };
 
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
     for (let i = 0; i < Math.min(particleCount, 40); i++) {
-      setTimeout(() => createSeed(), Math.random() * 3000);
+      const timer = setTimeout(() => createSeed(), Math.random() * 3000);
+      timers.push(timer);
     }
 
     const interval = setInterval(
       createSeed,
       Math.max(400, 800 - effect.intensity * 4)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
@@ -711,6 +703,9 @@ export default function EffectsManager() {
     container: HTMLElement,
     effect: Effect
   ) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createShootingStar = () => {
       const star = document.createElement("div");
       star.className = "absolute";
@@ -725,7 +720,6 @@ export default function EffectsManager() {
       }px ${effect.color}80`;
       star.style.animation = "shooting-star 3s linear forwards";
 
-      // Add trail
       const trail = document.createElement("div");
       trail.className = "absolute";
       trail.style.width = "100px";
@@ -737,25 +731,28 @@ export default function EffectsManager() {
       star.appendChild(trail);
 
       container.appendChild(star);
-      setTimeout(() => star.remove(), 3000);
+      const timer = setTimeout(() => star.remove(), 3000);
+      timers.push(timer);
     };
 
     const interval = setInterval(
       createShootingStar,
       Math.max(2000, 6000 - effect.intensity * 40)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
 
   const createSparklesEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createSparkle = () => {
       const sparkle = document.createElement("div");
       sparkle.innerHTML = "✨";
@@ -770,25 +767,28 @@ export default function EffectsManager() {
       sparkle.style.animation = "sparkle-appear 3s ease-out forwards";
 
       container.appendChild(sparkle);
-      setTimeout(() => sparkle.remove(), 3000);
+      const timer = setTimeout(() => sparkle.remove(), 3000);
+      timers.push(timer);
     };
 
     const interval = setInterval(
       createSparkle,
       Math.max(200, 600 - effect.intensity * 8)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
 
   const createRainbowDropsEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createDrop = () => {
       const drop = document.createElement("div");
       drop.className = "absolute rounded-full";
@@ -803,32 +803,36 @@ export default function EffectsManager() {
       }ms ease-in forwards`;
 
       container.appendChild(drop);
-      setTimeout(() => drop.remove(), 4000 / effect.speed);
+      const timer = setTimeout(() => drop.remove(), 4000 / effect.speed);
+      timers.push(timer);
     };
 
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
     for (let i = 0; i < Math.min(particleCount, 60); i++) {
-      setTimeout(() => createDrop(), Math.random() * 2000);
+      const timer = setTimeout(() => createDrop(), Math.random() * 2000);
+      timers.push(timer);
     }
 
     const interval = setInterval(
       createDrop,
       Math.max(150, 450 - effect.intensity * 3)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
 
   const createWindEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createWindLine = () => {
       const line = document.createElement("div");
       line.className = "absolute";
@@ -845,20 +849,20 @@ export default function EffectsManager() {
       }ms linear forwards`;
 
       container.appendChild(line);
-      setTimeout(() => line.remove(), 2500 / effect.speed);
+      const timer = setTimeout(() => line.remove(), 2500 / effect.speed);
+      timers.push(timer);
     };
 
     const interval = setInterval(
       createWindLine,
       Math.max(100, 200 - effect.intensity)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
@@ -907,6 +911,9 @@ export default function EffectsManager() {
   };
 
   const createEmbersEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createEmber = () => {
       const ember = document.createElement("div");
       ember.className = "absolute rounded-full";
@@ -923,27 +930,28 @@ export default function EffectsManager() {
       }ms ease-out forwards`;
 
       container.appendChild(ember);
-      setTimeout(() => ember.remove(), 5000 / effect.speed);
+      const timer = setTimeout(() => ember.remove(), 5000 / effect.speed);
+      timers.push(timer);
     };
 
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
     for (let i = 0; i < Math.min(particleCount, 40); i++) {
-      setTimeout(() => createEmber(), Math.random() * 2000);
+      const timer = setTimeout(() => createEmber(), Math.random() * 2000);
+      timers.push(timer);
     }
 
     const interval = setInterval(
       createEmber,
       Math.max(300, 700 - effect.intensity * 4)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
@@ -952,7 +960,11 @@ export default function EffectsManager() {
     container: HTMLElement,
     effect: Effect
   ) => {
-    const createFeather = () => {
+    const particleCount = Math.floor(
+      (effect.particles * effect.intensity) / 100
+    );
+
+    for (let i = 0; i < Math.min(particleCount, 15); i++) {
       const feather = document.createElement("div");
       feather.innerHTML = "🪶";
       feather.className = "absolute";
@@ -967,17 +979,13 @@ export default function EffectsManager() {
       }ms ease-in-out infinite`;
 
       container.appendChild(feather);
-    };
-
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
-    for (let i = 0; i < Math.min(particleCount, 15); i++) {
-      setTimeout(() => createFeather(), Math.random() * 3000);
     }
   };
 
   const createBubblesEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createBubble = () => {
       const bubble = document.createElement("div");
       bubble.className = "absolute rounded-full";
@@ -993,33 +1001,38 @@ export default function EffectsManager() {
       }ms ease-out forwards`;
 
       container.appendChild(bubble);
-      setTimeout(() => bubble.remove(), 4000 / effect.speed);
+      const timer = setTimeout(() => bubble.remove(), 4000 / effect.speed);
+      timers.push(timer);
     };
 
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
     for (let i = 0; i < Math.min(particleCount, 60); i++) {
-      setTimeout(() => createBubble(), Math.random() * 2000);
+      const timer = setTimeout(() => createBubble(), Math.random() * 2000);
+      timers.push(timer);
     }
 
     const interval = setInterval(
       createBubble,
       Math.max(200, 600 - effect.intensity * 4)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
 
   const createJellyfishEffect = (container: HTMLElement, effect: Effect) => {
-    const createJellyfish = () => {
+    const particleCount = Math.floor(
+      (effect.particles * effect.intensity) / 100
+    );
+
+    for (let i = 0; i < Math.min(particleCount, 10); i++) {
       const jellyfish = document.createElement("div");
       jellyfish.innerHTML = "🎐";
       jellyfish.className = "absolute";
@@ -1034,13 +1047,6 @@ export default function EffectsManager() {
       }ms ease-in-out infinite`;
 
       container.appendChild(jellyfish);
-    };
-
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
-    for (let i = 0; i < Math.min(particleCount, 10); i++) {
-      setTimeout(() => createJellyfish(), Math.random() * 4000);
     }
   };
 
@@ -1048,7 +1054,11 @@ export default function EffectsManager() {
     container: HTMLElement,
     effect: Effect
   ) => {
-    const createShard = () => {
+    const particleCount = Math.floor(
+      (effect.particles * effect.intensity) / 100
+    );
+
+    for (let i = 0; i < Math.min(particleCount, 30); i++) {
       const shard = document.createElement("div");
       shard.innerHTML = "💎";
       shard.className = "absolute";
@@ -1063,18 +1073,15 @@ export default function EffectsManager() {
       }ms ease-in-out infinite`;
 
       container.appendChild(shard);
-    };
-
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
-    for (let i = 0; i < Math.min(particleCount, 30); i++) {
-      setTimeout(() => createShard(), Math.random() * 3000);
     }
   };
 
   const createSpiritOrbsEffect = (container: HTMLElement, effect: Effect) => {
-    const createOrb = () => {
+    const particleCount = Math.floor(
+      (effect.particles * effect.intensity) / 100
+    );
+
+    for (let i = 0; i < Math.min(particleCount, 20); i++) {
       const orb = document.createElement("div");
       orb.className = "absolute rounded-full";
       orb.style.width = `${effect.size * 2}px`;
@@ -1088,13 +1095,6 @@ export default function EffectsManager() {
       }ms ease-in-out infinite`;
 
       container.appendChild(orb);
-    };
-
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
-    for (let i = 0; i < Math.min(particleCount, 20); i++) {
-      setTimeout(() => createOrb(), Math.random() * 2000);
     }
   };
 
@@ -1120,6 +1120,9 @@ export default function EffectsManager() {
   };
 
   const createTornadoEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createDebris = () => {
       const debris = document.createElement("div");
       debris.innerHTML = ["🍃", "🌾", "💨"][Math.floor(Math.random() * 3)];
@@ -1137,32 +1140,35 @@ export default function EffectsManager() {
       debris.style.setProperty("--angle", `${angle}deg`);
 
       container.appendChild(debris);
-      setTimeout(() => debris.remove(), 3000 / effect.speed);
+      const timer = setTimeout(() => debris.remove(), 3000 / effect.speed);
+      timers.push(timer);
     };
 
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
     for (let i = 0; i < Math.min(particleCount, 80); i++) {
-      setTimeout(() => createDebris(), Math.random() * 1000);
+      const timer = setTimeout(() => createDebris(), Math.random() * 1000);
+      timers.push(timer);
     }
 
     const interval = setInterval(
       createDebris,
       Math.max(100, 300 - effect.intensity * 2)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
 
   const createVolcanicAshEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
@@ -1189,29 +1195,33 @@ export default function EffectsManager() {
       ash.style.animation = `volcanic-ash-fall ${fallSpeed}ms linear forwards`;
 
       container.appendChild(ash);
-      setTimeout(() => ash.remove(), fallSpeed);
+      const timer = setTimeout(() => ash.remove(), fallSpeed);
+      timers.push(timer);
     };
 
     for (let i = 0; i < Math.min(particleCount, 120); i++) {
-      setTimeout(() => createAshParticle(), Math.random() * 3000);
+      const timer = setTimeout(() => createAshParticle(), Math.random() * 3000);
+      timers.push(timer);
     }
 
     const interval = setInterval(
       createAshParticle,
       Math.max(80, 200 - effect.intensity)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
 
   const createMeteorShowerEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createMeteor = () => {
       const meteor = document.createElement("div");
       meteor.className = "absolute";
@@ -1228,7 +1238,6 @@ export default function EffectsManager() {
         0 0 ${size * 6}px #FF4500
       `;
 
-      // Create trail
       const trail = document.createElement("div");
       trail.className = "absolute";
       trail.style.width = `${size * 20}px`;
@@ -1243,25 +1252,27 @@ export default function EffectsManager() {
 
       meteor.style.animation = "meteor-streak 4s linear forwards";
       container.appendChild(meteor);
-      setTimeout(() => meteor.remove(), 4000);
+      const timer = setTimeout(() => meteor.remove(), 4000);
+      timers.push(timer);
     };
 
     const interval = setInterval(
       createMeteor,
       Math.max(1000, 3000 - effect.intensity * 20)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
 
   const createSandstormEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
@@ -1288,24 +1299,28 @@ export default function EffectsManager() {
       }ms linear forwards`;
 
       container.appendChild(sand);
-      setTimeout(() => sand.remove(), 3000 / speed);
+      const timer = setTimeout(() => sand.remove(), 3000 / speed);
+      timers.push(timer);
     };
 
     for (let i = 0; i < Math.min(particleCount, 150); i++) {
-      setTimeout(() => createSandParticle(), Math.random() * 2000);
+      const timer = setTimeout(
+        () => createSandParticle(),
+        Math.random() * 2000
+      );
+      timers.push(timer);
     }
 
     const interval = setInterval(
       createSandParticle,
       Math.max(50, 150 - effect.intensity)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
@@ -1363,6 +1378,9 @@ export default function EffectsManager() {
   };
 
   const createDragonBreathEffect = (container: HTMLElement, effect: Effect) => {
+    const timers: (NodeJS.Timeout | number)[] = [];
+    (container as any).timers = timers;
+
     const createBreathParticle = () => {
       const particle = document.createElement("div");
       particle.className = "absolute";
@@ -1385,27 +1403,31 @@ export default function EffectsManager() {
       particle.style.animation = `dragon-breath-particle ${duration}ms ease-out forwards`;
 
       container.appendChild(particle);
-      setTimeout(() => particle.remove(), duration);
+      const timer = setTimeout(() => particle.remove(), duration);
+      timers.push(timer);
     };
 
     const particleCount = Math.floor(
       (effect.particles * effect.intensity) / 100
     );
     for (let i = 0; i < Math.min(particleCount, 80); i++) {
-      setTimeout(() => createBreathParticle(), Math.random() * 1000);
+      const timer = setTimeout(
+        () => createBreathParticle(),
+        Math.random() * 1000
+      );
+      timers.push(timer);
     }
 
     const interval = setInterval(
       createBreathParticle,
       Math.max(50, 150 - effect.intensity)
     );
-    setEffectIntervals((prev) => new Map(prev).set(effect.id, interval));
+    timers.push(interval);
+
     (container as any).cleanup = () => {
-      clearInterval(interval);
-      setEffectIntervals((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(effect.id);
-        return newMap;
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+        clearInterval(timer as any);
       });
     };
   };
@@ -1434,7 +1456,6 @@ export default function EffectsManager() {
 
   return (
     <>
-      {/* Effects CSS Animations */}
       <style jsx global>{`
         @keyframes rain-fall {
           0% {
