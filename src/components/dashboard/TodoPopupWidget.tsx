@@ -146,7 +146,7 @@ export default function TodoPopupWidget({
                   onClick={onClose}
                   className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
-                  Got it! Let's focus! 🎯
+                  {"Got it! Let's focus! 🎯"}
                 </motion.button>
               </div>
             </div>

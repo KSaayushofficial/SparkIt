@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import {
   Play,
   Pause,
@@ -17,8 +18,14 @@ import {
 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 
+interface Notification {
+  type: "success" | "info" | "warning" | "error";
+  title: string;
+  message: string;
+}
+
 interface FitnessSectionProps {
-  onNotification: (notification: any) => void;
+  onNotification: (notification: Notification) => void;
 }
 
 interface Exercise {
@@ -522,7 +529,7 @@ const categoryColors = {
   yoga: "from-indigo-500 to-purple-500",
   pilates: "from-pink-500 to-rose-500",
   functional: "from-teal-500 to-cyan-500",
-};
+} as const;
 
 export default function FitnessSection({
   onNotification,
@@ -544,6 +551,57 @@ export default function FitnessSection({
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const stepTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const completeExercise = useCallback(() => {
+    if (!selectedExercise) return;
+
+    setIsActive(false);
+    setCompletedExercises((prev) => [...prev, selectedExercise.id]);
+    setTotalTimeSpent((prev) => prev + selectedExercise.duration);
+    setCurrentStreak((prev) => prev + 1);
+
+    onNotification({
+      type: "success",
+      title: "Exercise Completed!",
+      message: `Great job! You burned approximately ${selectedExercise.calories} calories`,
+    });
+
+    setSelectedExercise(null);
+    setCurrentStepIndex(0);
+    setTimeRemaining(0);
+  }, [selectedExercise, onNotification]);
+
+  const handleNextStep = useCallback(() => {
+    if (!selectedExercise) return;
+
+    const currentStep = selectedExercise.steps[currentStepIndex];
+
+    // Check if there's rest time after this step
+    if (currentStep.restAfter && currentStep.restAfter > 0) {
+      setIsResting(true);
+      setRestTimeRemaining(currentStep.restAfter);
+
+      onNotification({
+        type: "info",
+        title: "Rest Time",
+        message: `Rest for ${currentStep.restAfter} seconds`,
+      });
+    }
+
+    if (currentStepIndex < selectedExercise.steps.length - 1) {
+      const nextIndex = currentStepIndex + 1;
+      setCurrentStepIndex(nextIndex);
+
+      onNotification({
+        type: "info",
+        title: "Next Step",
+        message: selectedExercise.steps[nextIndex].instruction,
+      });
+    } else {
+      // Exercise completed
+      completeExercise();
+    }
+  }, [selectedExercise, currentStepIndex, onNotification, completeExercise]);
 
   useEffect(() => {
     return () => {
@@ -574,7 +632,7 @@ export default function FitnessSection({
         clearInterval(intervalRef.current);
       }
     };
-  }, [isActive, isPaused, timeRemaining]);
+  }, [isActive, isPaused, timeRemaining, completeExercise]);
 
   useEffect(() => {
     if (isActive && !isPaused && stepTimer > 0) {
@@ -598,7 +656,7 @@ export default function FitnessSection({
         clearInterval(stepTimerRef.current);
       }
     };
-  }, [isActive, isPaused, stepTimer, customDuration]);
+  }, [isActive, isPaused, stepTimer, customDuration, handleNextStep]);
 
   useEffect(() => {
     if (isResting && restTimeRemaining > 0) {
@@ -630,57 +688,6 @@ export default function FitnessSection({
       title: "Exercise Started",
       message: `Starting ${exercise.name} - ${exercise.steps.length} steps`,
     });
-  };
-
-  const handleNextStep = () => {
-    if (!selectedExercise) return;
-
-    const currentStep = selectedExercise.steps[currentStepIndex];
-
-    // Check if there's rest time after this step
-    if (currentStep.restAfter && currentStep.restAfter > 0) {
-      setIsResting(true);
-      setRestTimeRemaining(currentStep.restAfter);
-
-      onNotification({
-        type: "info",
-        title: "Rest Time",
-        message: `Rest for ${currentStep.restAfter} seconds`,
-      });
-    }
-
-    if (currentStepIndex < selectedExercise.steps.length - 1) {
-      const nextIndex = currentStepIndex + 1;
-      setCurrentStepIndex(nextIndex);
-
-      onNotification({
-        type: "info",
-        title: "Next Step",
-        message: selectedExercise.steps[nextIndex].instruction,
-      });
-    } else {
-      // Exercise completed
-      completeExercise();
-    }
-  };
-
-  const completeExercise = () => {
-    if (!selectedExercise) return;
-
-    setIsActive(false);
-    setCompletedExercises((prev) => [...prev, selectedExercise.id]);
-    setTotalTimeSpent((prev) => prev + selectedExercise.duration);
-    setCurrentStreak((prev) => prev + 1);
-
-    onNotification({
-      type: "success",
-      title: "Exercise Completed!",
-      message: `Great job! You burned approximately ${selectedExercise.calories} calories`,
-    });
-
-    setSelectedExercise(null);
-    setCurrentStepIndex(0);
-    setTimeRemaining(0);
   };
 
   const togglePause = () => {
@@ -775,9 +782,11 @@ export default function FitnessSection({
 
               {/* Visual Representation */}
               <div className="flex-1 bg-black/20 rounded-lg overflow-hidden mb-6 flex items-center justify-center min-h-0">
-                <img
-                  src={selectedExercise.videoUrl || "/placeholder.svg"}
+                <Image
+                  src={selectedExercise.videoUrl}
                   alt={selectedExercise.name}
+                  width={400}
+                  height={300}
                   className="w-full h-full object-cover rounded-lg"
                 />
               </div>
@@ -892,9 +901,11 @@ export default function FitnessSection({
                     </div>
 
                     <div className="bg-black/20 rounded-lg p-4 mb-4">
-                      <img
-                        src={selectedExercise.imageUrl || "/placeholder.svg"}
+                      <Image
+                        src={selectedExercise.imageUrl}
                         alt={`Step ${currentStepIndex + 1}`}
+                        width={300}
+                        height={128}
                         className="w-full h-32 object-cover rounded-lg mb-4"
                       />
                       <p className="text-white text-base leading-relaxed">
@@ -1083,9 +1094,11 @@ export default function FitnessSection({
                       <div className="flex flex-col h-full">
                         {/* Exercise Image */}
                         <div className="bg-black/20 rounded-lg overflow-hidden mb-4">
-                          <img
-                            src={exercise.imageUrl || "/placeholder.svg"}
+                          <Image
+                            src={exercise.imageUrl}
                             alt={exercise.name}
+                            width={300}
+                            height={128}
                             className="w-full h-32 object-cover"
                           />
                         </div>

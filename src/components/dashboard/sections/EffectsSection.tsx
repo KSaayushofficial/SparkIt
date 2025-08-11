@@ -39,8 +39,14 @@ import {
 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 
+interface Notification {
+  type: "success" | "info" | "warning" | "error";
+  title: string;
+  message: string;
+}
+
 interface EffectsSectionProps {
-  onNotification: (notification: any) => void;
+  onNotification: (notification: Notification) => void;
 }
 
 const iconMap = {
@@ -757,7 +763,7 @@ const defaultEffects: Effect[] = [
   },
   {
     id: "dragon-breath",
-    name: "Dragon's Breath",
+    name: "Dragon&apos;s Breath",
     category: "magical",
     iconName: "Flame",
     description:
@@ -878,7 +884,7 @@ export default function EffectsSection({
   const updateEffectProperty = (
     effectId: string,
     property: keyof Omit<Effect, "iconName">,
-    value: any
+    value: string | number | boolean
   ) => {
     setEffects((prev) =>
       prev.map((effect) =>
@@ -922,8 +928,8 @@ export default function EffectsSection({
             Hyper-Realistic Ambient Effects
           </h1>
           <p className="text-white/70">
-            Immersive, physics-based effects that bring nature's beauty to your
-            digital workspace
+            Immersive, physics-based effects that bring nature&apos;s beauty to
+            your digital workspace
           </p>
         </motion.div>
 

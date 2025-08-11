@@ -185,7 +185,6 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
             Set ambitious goals and track your journey to success
           </p>
         </motion.div>
-  
 
         {/* Stats Overview */}
         <motion.div
