@@ -188,7 +188,6 @@ export default function HomeSection({ onNotification }: HomeSectionProps) {
 return (
   <div className="min-h-screen w-full px-6 py-4 flex flex-col justify-between">
     {" "}
-
     <div className="flex flex-col gap-6">
       <div className="text-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -218,7 +217,7 @@ return (
             <p className="text-white font-semibold">Keep Growing</p>
             <p className="text-white/70 text-xs">Every step counts</p>
           </GlassPanel>
-          
+
           <GlassPanel className="p-4 text-center" glow>
             <Calendar className="text-orange-400 mx-auto mb-2" size={24} />
             <p className="text-white font-semibold">{currentTime.getDate()}</p>
@@ -252,7 +251,7 @@ return (
 
           <div className="text-center">
             <blockquote className="text-sm text-white italic leading-relaxed">
-              "{currentQuote.text}"
+              &quot;{currentQuote.text}&quot;
             </blockquote>
             <div className="text-white/70 text-xs mt-2">
               — {currentQuote.author}

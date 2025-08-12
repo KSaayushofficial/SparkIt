@@ -37,14 +37,14 @@ interface Milestone {
 }
 
 // Define the type for the notification object
-interface Notification {
-  type: "success" | "info" | "error";
-  title: string;
-  message: string;
-}
+// interface Notification {
+//   type: "success" | "info" | "error";
+//   title: string;
+//   message: string;
+// }
 
 interface GoalsSectionProps {
-  onNotification: (notification: any) => void;
+  onNotification: (notification: unknown) => void;
 }
 
 const categories = [

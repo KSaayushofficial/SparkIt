@@ -30,7 +30,7 @@ import type { Todo } from "../types";
 interface TodoSectionProps {
   todos: Todo[];
   setTodos: (todos: Todo[]) => void;
-  onNotification: (notification: any) => void;
+  onNotification: (notification: unknown) => void;
 }
 
 const priorities = ["low", "medium", "high"] as const;

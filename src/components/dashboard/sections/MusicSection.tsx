@@ -14,14 +14,14 @@ import {
 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 
-interface Notification {
-  title: string;
-  message: string;
-  type: "info" | "success" | "error" | "warning";
-}
+// interface Notification {
+//   title: string;
+//   message: string;
+//   type: "info" | "success" | "error" | "warning";
+// }
 
 interface MusicSectionProps {
-  onNotification: (notification: any) => void;
+  onNotification: (notification: unknown) => void;
 }
 
 interface AmbientSound {

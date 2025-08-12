@@ -39,11 +39,11 @@ import {
 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 
-interface Notification {
-  type: "success" | "info" | "warning" | "error";
-  title: string;
-  message: string;
-}
+// interface Notification {
+//   type: "success" | "info" | "warning" | "error";
+//   title: string;
+//   message: string;
+// }
 
 interface EffectsSectionProps {
   onNotification: (notification: any) => void;
