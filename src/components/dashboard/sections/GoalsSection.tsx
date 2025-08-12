@@ -44,7 +44,7 @@ interface Notification {
 }
 
 interface GoalsSectionProps {
-  onNotification: (notification: Notification) => void;
+  onNotification: (notification: any) => void;
 }
 
 const categories = [

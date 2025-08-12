@@ -21,7 +21,7 @@ interface Notification {
 }
 
 interface MusicSectionProps {
-  onNotification: (notification: Notification) => void;
+  onNotification: (notification: any) => void;
 }
 
 interface AmbientSound {

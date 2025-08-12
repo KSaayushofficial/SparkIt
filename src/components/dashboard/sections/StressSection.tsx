@@ -26,7 +26,7 @@ interface Notification {
 
 // Update the props interface to use the new Notification type
 interface StressSectionProps {
-  onNotification: (notification: Notification) => void;
+  onNotification: (notification: any) => void;
 }
 
 interface WellnessActivity {

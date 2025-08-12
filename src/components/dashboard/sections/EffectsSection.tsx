@@ -46,7 +46,7 @@ interface Notification {
 }
 
 interface EffectsSectionProps {
-  onNotification: (notification: Notification) => void;
+  onNotification: (notification: any) => void;
 }
 
 const iconMap = {

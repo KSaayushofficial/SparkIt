@@ -23,21 +23,21 @@ import type {
   Milestone,
 } from "@/components/dashboard/types";
 
-
 // Define types for the parsed localStorage data
-interface ParsedTodo extends Omit<Todo, 'createdAt' | 'completedAt' | 'dueDate'> {
+interface ParsedTodo
+  extends Omit<Todo, "createdAt" | "completedAt" | "dueDate"> {
   createdAt: string;
   completedAt?: string;
   dueDate?: string;
 }
 
-interface ParsedHabit extends Omit<Habit, 'completedDates'> {
+interface ParsedHabit extends Omit<Habit, "completedDates"> {
   completedDates: string[];
 }
 
-interface ParsedGoal extends Omit<Goal, 'deadline' | 'milestones'> {
+interface ParsedGoal extends Omit<Goal, "deadline" | "milestones"> {
   deadline: string;
-  milestones: Array<Omit<Milestone, 'dueDate'> & { dueDate: string }>;
+  milestones: Array<Omit<Milestone, "dueDate"> & { dueDate: string }>;
 }
 
 export default function Dashboard() {
@@ -62,7 +62,9 @@ export default function Dashboard() {
         const todosWithDates = parsed.map((todo) => ({
           ...todo,
           createdAt: new Date(todo.createdAt),
-          completedAt: todo.completedAt ? new Date(todo.completedAt) : undefined,
+          completedAt: todo.completedAt
+            ? new Date(todo.completedAt)
+            : undefined,
           dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
         }));
         setTodos(todosWithDates);
@@ -106,7 +108,6 @@ export default function Dashboard() {
   }, []);
 
   // ... rest of your component code remains the same ...
-
 
   useEffect(() => {
     localStorage.setItem("dashboard-todos", JSON.stringify(todos));
@@ -211,7 +212,7 @@ export default function Dashboard() {
             setTodos={handleSetTodos}
             onNotification={addNotification}
           />
-        ); 
+        );
       case "habits":
         return (
           <HabitsSection
@@ -221,9 +222,7 @@ export default function Dashboard() {
           />
         );
       case "goals":
-        return (
-          <GoalsSection onNotification={addNotification} />
-        );
+        return <GoalsSection onNotification={addNotification} />;
       case "music":
         return <MusicSection onNotification={addNotification} />;
       case "fitness":

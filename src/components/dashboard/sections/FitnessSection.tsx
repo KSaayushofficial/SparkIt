@@ -25,7 +25,7 @@ interface Notification {
 }
 
 interface FitnessSectionProps {
-  onNotification: (notification: Notification) => void;
+  onNotification: (notification: any) => void;
 }
 
 interface Exercise {

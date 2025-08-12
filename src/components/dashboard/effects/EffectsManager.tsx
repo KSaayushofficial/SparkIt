@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 interface Effect {
   id: string;
@@ -18,15 +18,65 @@ interface Effect {
   interactive: boolean;
 }
 
-interface EffectContainer extends HTMLDivElement {
-  cleanup?: () => void;
-  timers?: (NodeJS.Timeout | number)[];
-}
-
 export default function EffectsManager() {
   const [activeEffects, setActiveEffects] = useState<Effect[]>([]);
   const [isPlaying, setIsPlaying] = useState(true);
   const timersRef = useRef<Map<string, NodeJS.Timeout | number>>(new Map());
+
+  const clearAllEffects = useCallback(() => {
+    const container = document.getElementById("global-effects-container");
+    if (container) {
+      Array.from(container.children).forEach((child) => {
+        const effectContainer = child as HTMLDivElement & { cleanup?: () => void };
+        if (effectContainer.cleanup) {
+          effectContainer.cleanup();
+        }
+      });
+      container.innerHTML = "";
+    }
+    timersRef.current.forEach((timer) => {
+      clearTimeout(timer);
+      clearInterval(timer as NodeJS.Timeout);
+    });
+    timersRef.current.clear();
+  }, []);
+
+  const pauseAllEffects = useCallback(() => {
+    const container = document.getElementById("global-effects-container");
+    if (container) {
+      container.style.display = "none";
+    }
+  }, []);
+
+  const applyActiveEffects = useCallback(() => {
+    const container = document.getElementById("global-effects-container");
+    if (!container) return;
+
+    clearAllEffects();
+
+    activeEffects.forEach((effect) => {
+      createGlobalEffect(container, effect);
+    });
+  }, [activeEffects, clearAllEffects]);
+
+  const loadActiveEffects = useCallback(() => {
+    try {
+      const savedEffects = localStorage.getItem("dashboard-effects");
+      const savedPlayback = localStorage.getItem("effects-playing");
+
+      if (savedEffects) {
+        const effects = JSON.parse(savedEffects);
+        const active = effects.filter((effect: Effect) => effect.isActive);
+        setActiveEffects(active);
+      }
+
+      if (savedPlayback !== null) {
+        setIsPlaying(JSON.parse(savedPlayback));
+      }
+    } catch (error) {
+      console.error("Error loading effects:", error);
+    }
+  }, []);
 
   useEffect(() => {
     loadActiveEffects();
@@ -52,22 +102,16 @@ export default function EffectsManager() {
     window.addEventListener("effectsChanged", handleEffectsChange);
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("initializeEffects", handleInitialize);
-    window.addEventListener(
-      "effectsPlaybackToggle",
-      handlePlaybackToggle as EventListener
-    );
+    window.addEventListener("effectsPlaybackToggle", handlePlaybackToggle as EventListener);
 
     return () => {
       window.removeEventListener("effectsChanged", handleEffectsChange);
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("initializeEffects", handleInitialize);
-      window.removeEventListener(
-        "effectsPlaybackToggle",
-        handlePlaybackToggle as EventListener
-      );
+      window.removeEventListener("effectsPlaybackToggle", handlePlaybackToggle as EventListener);
       clearAllEffects();
     };
-  }, []);
+  }, [loadActiveEffects, clearAllEffects]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -75,67 +119,13 @@ export default function EffectsManager() {
     } else {
       pauseAllEffects();
     }
-  }, [activeEffects, isPlaying]);
-
-  const loadActiveEffects = () => {
-    try {
-      const savedEffects = localStorage.getItem("dashboard-effects");
-      const savedPlayback = localStorage.getItem("effects-playing");
-
-      if (savedEffects) {
-        const effects = JSON.parse(savedEffects);
-        const active = effects.filter((effect: Effect) => effect.isActive);
-        setActiveEffects(active);
-      }
-
-      if (savedPlayback !== null) {
-        setIsPlaying(JSON.parse(savedPlayback));
-      }
-    } catch (error) {
-      console.error("Error loading effects:", error);
-    }
-  };
-
-  const applyActiveEffects = () => {
-    const container = document.getElementById("global-effects-container");
-    if (!container) return;
-
-    clearAllEffects();
-
-    activeEffects.forEach((effect) => {
-      createGlobalEffect(container, effect);
-    });
-  };
-
-  const clearAllEffects = () => {
-    const container = document.getElementById("global-effects-container");
-    if (container) {
-      Array.from(container.children).forEach((child) => {
-        if ((child as any).cleanup) {
-          (child as any).cleanup();
-        }
-      });
-      container.innerHTML = "";
-    }
-    timersRef.current.forEach((timer) => {
-      clearTimeout(timer);
-      clearInterval(timer as any);
-    });
-    timersRef.current.clear();
-  };
-
-  const pauseAllEffects = () => {
-    const container = document.getElementById("global-effects-container");
-    if (container) {
-      container.style.display = "none";
-    }
-  };
+  }, [activeEffects, isPlaying, applyActiveEffects, pauseAllEffects]);
 
   const createGlobalEffect = (container: HTMLElement, effect: Effect) => {
     const effectContainer = document.createElement("div");
     effectContainer.className = "absolute inset-0 pointer-events-none";
     effectContainer.id = `global-effect-${effect.id}`;
-    (effectContainer as any).timers = [];
+    (effectContainer as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = [];
 
     switch (effect.id) {
       case "rain":
@@ -243,10 +233,8 @@ export default function EffectsManager() {
 
   const createRainEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     const createRaindrop = () => {
       const drop = document.createElement("div");
@@ -255,27 +243,19 @@ export default function EffectsManager() {
       drop.style.height = `${effect.size * 10}px`;
       drop.style.left = `${Math.random() * 100}%`;
       drop.style.top = "-30px";
-      drop.style.background = `linear-gradient(180deg, ${
-        effect.color
-      }${Math.floor(effect.opacity * 255).toString(16)}, transparent)`;
+      drop.style.background = `linear-gradient(180deg, ${effect.color}${Math.floor(effect.opacity * 255).toString(16)}, transparent)`;
       drop.style.borderRadius = "50%";
       drop.style.boxShadow = `0 0 ${effect.size}px ${effect.color}40`;
 
       const windOffset = (Math.random() - 0.5) * 50;
       drop.style.setProperty("--wind-offset", `${windOffset}px`);
-      drop.style.animation = `rain-fall ${
-        3000 / effect.speed
-      }ms linear forwards`;
+      drop.style.animation = `rain-fall ${3000 / effect.speed}ms linear forwards`;
 
       container.appendChild(drop);
 
       const timer = setTimeout(() => {
         if (effect.physics) {
-          createRainSplash(
-            container,
-            drop.offsetLeft + windOffset,
-            window.innerHeight - 20
-          );
+          createRainSplash(container, drop.offsetLeft + windOffset, window.innerHeight - 20);
         }
         drop.remove();
       }, 3000 / effect.speed);
@@ -287,16 +267,13 @@ export default function EffectsManager() {
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createRaindrop,
-      Math.max(50, 200 - effect.intensity * 2)
-    );
+    const interval = setInterval(createRaindrop, Math.max(50, 200 - effect.intensity * 2));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
@@ -325,16 +302,13 @@ export default function EffectsManager() {
 
   const createSnowEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     const createSnowflake = () => {
       const flake = document.createElement("div");
       const snowflakeTypes = ["❄", "❅", "❆", "✻", "✼", "❉"];
-      flake.innerHTML =
-        snowflakeTypes[Math.floor(Math.random() * snowflakeTypes.length)];
+      flake.innerHTML = snowflakeTypes[Math.floor(Math.random() * snowflakeTypes.length)];
       flake.className = "absolute text-white";
       flake.style.fontSize = `${effect.size * 3}px`;
       flake.style.left = `${Math.random() * 100}%`;
@@ -346,9 +320,7 @@ export default function EffectsManager() {
       const rotation = Math.random() * 720 - 360;
       flake.style.setProperty("--drift", `${drift}px`);
       flake.style.setProperty("--rotation", `${rotation}deg`);
-      flake.style.animation = `snowflake-fall ${
-        5000 / effect.speed
-      }ms linear forwards`;
+      flake.style.animation = `snowflake-fall ${5000 / effect.speed}ms linear forwards`;
 
       container.appendChild(flake);
       const timer = setTimeout(() => flake.remove(), 5000 / effect.speed);
@@ -360,23 +332,20 @@ export default function EffectsManager() {
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createSnowflake,
-      Math.max(100, 300 - effect.intensity * 2)
-    );
+    const interval = setInterval(createSnowflake, Math.max(100, 300 - effect.intensity * 2));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
   const createLightningEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createLightning = () => {
       const lightning = document.createElement("div");
@@ -432,20 +401,18 @@ export default function EffectsManager() {
 
     scheduleNextLightning();
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
   const createFirefliesEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     for (let i = 0; i < Math.min(particleCount, 25); i++) {
       const firefly = document.createElement("div");
@@ -455,12 +422,8 @@ export default function EffectsManager() {
       firefly.style.left = `${Math.random() * 100}%`;
       firefly.style.top = `${Math.random() * 100}%`;
       firefly.style.background = `radial-gradient(circle, ${effect.color} 0%, transparent 70%)`;
-      firefly.style.boxShadow = `0 0 ${effect.size * 6}px ${
-        effect.color
-      }, 0 0 ${effect.size * 12}px ${effect.color}40`;
-      firefly.style.animation = `firefly-glow ${
-        2 + Math.random() * 3
-      }s ease-in-out infinite`;
+      firefly.style.boxShadow = `0 0 ${effect.size * 6}px ${effect.color}, 0 0 ${effect.size * 12}px ${effect.color}40`;
+      firefly.style.animation = `firefly-glow ${2 + Math.random() * 3}s ease-in-out infinite`;
       firefly.style.animationDelay = `${Math.random() * 2}s`;
 
       const moveFirefly = () => {
@@ -480,34 +443,27 @@ export default function EffectsManager() {
       container.appendChild(firefly);
     }
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
   const createButterfliesEffect = (container: HTMLElement, effect: Effect) => {
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
     const butterflyEmojis = ["🦋", "🦋", "🦋"];
 
     for (let i = 0; i < Math.min(particleCount, 20); i++) {
       const butterfly = document.createElement("div");
-      butterfly.innerHTML =
-        butterflyEmojis[Math.floor(Math.random() * butterflyEmojis.length)];
+      butterfly.innerHTML = butterflyEmojis[Math.floor(Math.random() * butterflyEmojis.length)];
       butterfly.className = "absolute";
       butterfly.style.fontSize = `${effect.size * 2}px`;
       butterfly.style.left = `${Math.random() * 100}%`;
       butterfly.style.top = `${Math.random() * 100}%`;
-      butterfly.style.filter = `hue-rotate(${
-        Math.random() * 360
-      }deg) drop-shadow(0 0 4px rgba(255,105,180,0.6))`;
-      butterfly.style.animation = `butterfly-dance ${
-        6 + Math.random() * 4
-      }s ease-in-out infinite`;
+      butterfly.style.filter = `hue-rotate(${Math.random() * 360}deg) drop-shadow(0 0 4px rgba(255,105,180,0.6))`;
+      butterfly.style.animation = `butterfly-dance ${6 + Math.random() * 4}s ease-in-out infinite`;
       butterfly.style.animationDelay = `${Math.random() * 3}s`;
 
       container.appendChild(butterfly);
@@ -516,21 +472,18 @@ export default function EffectsManager() {
 
   const createAutumnLeavesEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
     const leafEmojis = ["🍂", "🍁", "🍃", "🌿"];
 
     const createLeaf = () => {
       const leaf = document.createElement("div");
-      leaf.innerHTML =
-        leafEmojis[Math.floor(Math.random() * leafEmojis.length)];
+      leaf.innerHTML = leafEmojis[Math.floor(Math.random() * leafEmojis.length)];
       leaf.className = "absolute";
       leaf.style.fontSize = `${effect.size * 2}px`;
       leaf.style.left = `${Math.random() * 100}%`;
       leaf.style.top = "-30px";
       leaf.style.opacity = effect.opacity.toString();
-      leaf.style.filter = `hue-rotate(${
-        Math.random() * 60 - 30
-      }deg) drop-shadow(0 0 2px rgba(210,105,30,0.8))`;
+      leaf.style.filter = `hue-rotate(${Math.random() * 60 - 30}deg) drop-shadow(0 0 2px rgba(210,105,30,0.8))`;
 
       const duration = 6000 / effect.speed;
       const drift = (Math.random() - 0.5) * 250;
@@ -545,34 +498,26 @@ export default function EffectsManager() {
       timers.push(timer);
     };
 
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
     for (let i = 0; i < Math.min(particleCount, 60); i++) {
       const timer = setTimeout(() => createLeaf(), Math.random() * 2000);
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createLeaf,
-      Math.max(200, 600 - effect.intensity * 4)
-    );
+    const interval = setInterval(createLeaf, Math.max(200, 600 - effect.intensity * 4));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
-  const createCherryBlossomsEffect = (
-    container: HTMLElement,
-    effect: Effect
-  ) => {
+  const createCherryBlossomsEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createPetal = () => {
       const petal = document.createElement("div");
@@ -582,9 +527,7 @@ export default function EffectsManager() {
       petal.style.left = `${Math.random() * 100}%`;
       petal.style.top = "-30px";
       petal.style.opacity = effect.opacity.toString();
-      petal.style.filter = `hue-rotate(${
-        Math.random() * 30 - 15
-      }deg) drop-shadow(0 0 3px rgba(255,182,193,0.8))`;
+      petal.style.filter = `hue-rotate(${Math.random() * 30 - 15}deg) drop-shadow(0 0 3px rgba(255,182,193,0.8))`;
 
       const duration = 7000 / effect.speed;
       const drift = (Math.random() - 0.5) * 200;
@@ -599,34 +542,26 @@ export default function EffectsManager() {
       timers.push(timer);
     };
 
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
     for (let i = 0; i < Math.min(particleCount, 50); i++) {
       const timer = setTimeout(() => createPetal(), Math.random() * 2000);
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createPetal,
-      Math.max(300, 700 - effect.intensity * 4)
-    );
+    const interval = setInterval(createPetal, Math.max(300, 700 - effect.intensity * 4));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
-  const createFloatingSeedsEffect = (
-    container: HTMLElement,
-    effect: Effect
-  ) => {
+  const createFloatingSeedsEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createSeed = () => {
       const seed = document.createElement("div");
@@ -651,32 +586,25 @@ export default function EffectsManager() {
       timers.push(timer);
     };
 
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
     for (let i = 0; i < Math.min(particleCount, 40); i++) {
       const timer = setTimeout(() => createSeed(), Math.random() * 3000);
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createSeed,
-      Math.max(400, 800 - effect.intensity * 4)
-    );
+    const interval = setInterval(createSeed, Math.max(400, 800 - effect.intensity * 4));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
   const createStarsEffect = (container: HTMLElement, effect: Effect) => {
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     for (let i = 0; i < Math.min(particleCount, 100); i++) {
       const star = document.createElement("div");
@@ -687,24 +615,17 @@ export default function EffectsManager() {
       star.style.top = `${Math.random() * 100}%`;
       star.style.color = effect.color;
       star.style.opacity = effect.opacity.toString();
-      star.style.filter = `drop-shadow(0 0 ${effect.size * 2}px ${
-        effect.color
-      })`;
-      star.style.animation = `star-twinkle ${
-        1 + Math.random() * 4
-      }s ease-in-out infinite`;
+      star.style.filter = `drop-shadow(0 0 ${effect.size * 2}px ${effect.color})`;
+      star.style.animation = `star-twinkle ${1 + Math.random() * 4}s ease-in-out infinite`;
       star.style.animationDelay = `${Math.random() * 2}s`;
 
       container.appendChild(star);
     }
   };
 
-  const createShootingStarsEffect = (
-    container: HTMLElement,
-    effect: Effect
-  ) => {
+  const createShootingStarsEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createShootingStar = () => {
       const star = document.createElement("div");
@@ -715,9 +636,7 @@ export default function EffectsManager() {
       star.style.top = `${Math.random() * 50}%`;
       star.style.background = effect.color;
       star.style.borderRadius = "50%";
-      star.style.boxShadow = `0 0 ${effect.size * 4}px ${effect.color}, 0 0 ${
-        effect.size * 8
-      }px ${effect.color}80`;
+      star.style.boxShadow = `0 0 ${effect.size * 4}px ${effect.color}, 0 0 ${effect.size * 8}px ${effect.color}80`;
       star.style.animation = "shooting-star 3s linear forwards";
 
       const trail = document.createElement("div");
@@ -735,23 +654,20 @@ export default function EffectsManager() {
       timers.push(timer);
     };
 
-    const interval = setInterval(
-      createShootingStar,
-      Math.max(2000, 6000 - effect.intensity * 40)
-    );
+    const interval = setInterval(createShootingStar, Math.max(2000, 6000 - effect.intensity * 40));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
   const createSparklesEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createSparkle = () => {
       const sparkle = document.createElement("div");
@@ -761,9 +677,7 @@ export default function EffectsManager() {
       sparkle.style.left = `${Math.random() * 100}%`;
       sparkle.style.top = `${Math.random() * 100}%`;
       sparkle.style.color = effect.color;
-      sparkle.style.filter = `hue-rotate(${
-        Math.random() * 360
-      }deg) drop-shadow(0 0 4px ${effect.color})`;
+      sparkle.style.filter = `hue-rotate(${Math.random() * 360}deg) drop-shadow(0 0 4px ${effect.color})`;
       sparkle.style.animation = "sparkle-appear 3s ease-out forwards";
 
       container.appendChild(sparkle);
@@ -771,23 +685,20 @@ export default function EffectsManager() {
       timers.push(timer);
     };
 
-    const interval = setInterval(
-      createSparkle,
-      Math.max(200, 600 - effect.intensity * 8)
-    );
+    const interval = setInterval(createSparkle, Math.max(200, 600 - effect.intensity * 8));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
   const createRainbowDropsEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createDrop = () => {
       const drop = document.createElement("div");
@@ -798,40 +709,33 @@ export default function EffectsManager() {
       drop.style.top = "-20px";
       drop.style.background = `hsl(${Math.random() * 360}, 70%, 60%)`;
       drop.style.boxShadow = `0 0 ${effect.size * 2}px currentColor`;
-      drop.style.animation = `rainbow-drop-fall ${
-        4000 / effect.speed
-      }ms ease-in forwards`;
+      drop.style.animation = `rainbow-drop-fall ${4000 / effect.speed}ms ease-in forwards`;
 
       container.appendChild(drop);
       const timer = setTimeout(() => drop.remove(), 4000 / effect.speed);
       timers.push(timer);
     };
 
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
     for (let i = 0; i < Math.min(particleCount, 60); i++) {
       const timer = setTimeout(() => createDrop(), Math.random() * 2000);
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createDrop,
-      Math.max(150, 450 - effect.intensity * 3)
-    );
+    const interval = setInterval(createDrop, Math.max(150, 450 - effect.intensity * 3));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
   const createWindEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createWindLine = () => {
       const line = document.createElement("div");
@@ -840,29 +744,22 @@ export default function EffectsManager() {
       line.style.height = "2px";
       line.style.left = "-80px";
       line.style.top = `${Math.random() * 100}%`;
-      line.style.background = `linear-gradient(90deg, transparent, ${
-        effect.color
-      }${Math.floor(effect.opacity * 255).toString(16)}, transparent)`;
+      line.style.background = `linear-gradient(90deg, transparent, ${effect.color}${Math.floor(effect.opacity * 255).toString(16)}, transparent)`;
       line.style.borderRadius = "1px";
-      line.style.animation = `wind-gust ${
-        2500 / effect.speed
-      }ms linear forwards`;
+      line.style.animation = `wind-gust ${2500 / effect.speed}ms linear forwards`;
 
       container.appendChild(line);
       const timer = setTimeout(() => line.remove(), 2500 / effect.speed);
       timers.push(timer);
     };
 
-    const interval = setInterval(
-      createWindLine,
-      Math.max(100, 200 - effect.intensity)
-    );
+    const interval = setInterval(createWindLine, Math.max(100, 200 - effect.intensity));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
@@ -875,14 +772,10 @@ export default function EffectsManager() {
       mist.style.height = `${effect.size}px`;
       mist.style.left = `${Math.random() * 100}%`;
       mist.style.bottom = "0";
-      mist.style.background = `radial-gradient(ellipse, ${
-        effect.color
-      }${Math.floor(effect.opacity * 255).toString(16)}, transparent)`;
+      mist.style.background = `radial-gradient(ellipse, ${effect.color}${Math.floor(effect.opacity * 255).toString(16)}, transparent)`;
       mist.style.borderRadius = "50%";
       mist.style.filter = "blur(4px)";
-      mist.style.animation = `mist-rise ${
-        10000 / effect.speed
-      }ms ease-out infinite`;
+      mist.style.animation = `mist-rise ${10000 / effect.speed}ms ease-out infinite`;
       mist.style.animationDelay = `${i * 800}ms`;
 
       container.appendChild(mist);
@@ -901,9 +794,7 @@ export default function EffectsManager() {
         hsla(${180 + i * 60}, 70%, 60%, 0.3) 50%, 
         transparent 100%)`;
       aurora.style.filter = "blur(2px)";
-      aurora.style.animation = `aurora-dance ${
-        8000 + i * 2000
-      }ms ease-in-out infinite`;
+      aurora.style.animation = `aurora-dance ${8000 + i * 2000}ms ease-in-out infinite`;
       aurora.style.animationDelay = `${i * 1000}ms`;
 
       container.appendChild(aurora);
@@ -912,7 +803,7 @@ export default function EffectsManager() {
 
   const createEmbersEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createEmber = () => {
       const ember = document.createElement("div");
@@ -922,47 +813,33 @@ export default function EffectsManager() {
       ember.style.left = `${Math.random() * 100}%`;
       ember.style.bottom = "0";
       ember.style.background = `radial-gradient(circle, ${effect.color} 0%, transparent 70%)`;
-      ember.style.boxShadow = `0 0 ${effect.size * 3}px ${effect.color}, 0 0 ${
-        effect.size * 6
-      }px ${effect.color}80`;
-      ember.style.animation = `ember-rise ${
-        5000 / effect.speed
-      }ms ease-out forwards`;
+      ember.style.boxShadow = `0 0 ${effect.size * 3}px ${effect.color}, 0 0 ${effect.size * 6}px ${effect.color}80`;
+      ember.style.animation = `ember-rise ${5000 / effect.speed}ms ease-out forwards`;
 
       container.appendChild(ember);
       const timer = setTimeout(() => ember.remove(), 5000 / effect.speed);
       timers.push(timer);
     };
 
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
     for (let i = 0; i < Math.min(particleCount, 40); i++) {
       const timer = setTimeout(() => createEmber(), Math.random() * 2000);
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createEmber,
-      Math.max(300, 700 - effect.intensity * 4)
-    );
+    const interval = setInterval(createEmber, Math.max(300, 700 - effect.intensity * 4));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
-  const createPhoenixFeathersEffect = (
-    container: HTMLElement,
-    effect: Effect
-  ) => {
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+  const createPhoenixFeathersEffect = (container: HTMLElement, effect: Effect) => {
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     for (let i = 0; i < Math.min(particleCount, 15); i++) {
       const feather = document.createElement("div");
@@ -971,12 +848,8 @@ export default function EffectsManager() {
       feather.style.fontSize = `${effect.size * 2}px`;
       feather.style.left = `${Math.random() * 100}%`;
       feather.style.top = `${Math.random() * 100}%`;
-      feather.style.filter = `hue-rotate(${
-        Math.random() * 60
-      }deg) drop-shadow(0 0 6px #FF6347)`;
-      feather.style.animation = `phoenix-feather-float ${
-        8000 + Math.random() * 4000
-      }ms ease-in-out infinite`;
+      feather.style.filter = `hue-rotate(${Math.random() * 60}deg) drop-shadow(0 0 6px #FF6347)`;
+      feather.style.animation = `phoenix-feather-float ${8000 + Math.random() * 4000}ms ease-in-out infinite`;
 
       container.appendChild(feather);
     }
@@ -984,7 +857,7 @@ export default function EffectsManager() {
 
   const createBubblesEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createBubble = () => {
       const bubble = document.createElement("div");
@@ -996,41 +869,32 @@ export default function EffectsManager() {
       bubble.style.bottom = "-30px";
       bubble.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, ${effect.color}60 100%)`;
       bubble.style.border = `1px solid ${effect.color}80`;
-      bubble.style.animation = `bubble-rise ${
-        4000 / effect.speed
-      }ms ease-out forwards`;
+      bubble.style.animation = `bubble-rise ${4000 / effect.speed}ms ease-out forwards`;
 
       container.appendChild(bubble);
       const timer = setTimeout(() => bubble.remove(), 4000 / effect.speed);
       timers.push(timer);
     };
 
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
     for (let i = 0; i < Math.min(particleCount, 60); i++) {
       const timer = setTimeout(() => createBubble(), Math.random() * 2000);
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createBubble,
-      Math.max(200, 600 - effect.intensity * 4)
-    );
+    const interval = setInterval(createBubble, Math.max(200, 600 - effect.intensity * 4));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
   const createJellyfishEffect = (container: HTMLElement, effect: Effect) => {
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     for (let i = 0; i < Math.min(particleCount, 10); i++) {
       const jellyfish = document.createElement("div");
@@ -1039,24 +903,15 @@ export default function EffectsManager() {
       jellyfish.style.fontSize = `${effect.size * 2}px`;
       jellyfish.style.left = `${Math.random() * 100}%`;
       jellyfish.style.top = `${Math.random() * 100}%`;
-      jellyfish.style.filter = `hue-rotate(${
-        Math.random() * 360
-      }deg) drop-shadow(0 0 8px ${effect.color})`;
-      jellyfish.style.animation = `jellyfish-float ${
-        12000 + Math.random() * 8000
-      }ms ease-in-out infinite`;
+      jellyfish.style.filter = `hue-rotate(${Math.random() * 360}deg) drop-shadow(0 0 8px ${effect.color})`;
+      jellyfish.style.animation = `jellyfish-float ${12000 + Math.random() * 8000}ms ease-in-out infinite`;
 
       container.appendChild(jellyfish);
     }
   };
 
-  const createCrystalShardsEffect = (
-    container: HTMLElement,
-    effect: Effect
-  ) => {
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+  const createCrystalShardsEffect = (container: HTMLElement, effect: Effect) => {
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     for (let i = 0; i < Math.min(particleCount, 30); i++) {
       const shard = document.createElement("div");
@@ -1065,21 +920,15 @@ export default function EffectsManager() {
       shard.style.fontSize = `${effect.size * 2}px`;
       shard.style.left = `${Math.random() * 100}%`;
       shard.style.top = `${Math.random() * 100}%`;
-      shard.style.filter = `hue-rotate(${
-        Math.random() * 360
-      }deg) drop-shadow(0 0 6px ${effect.color})`;
-      shard.style.animation = `crystal-shard-float ${
-        6000 + Math.random() * 4000
-      }ms ease-in-out infinite`;
+      shard.style.filter = `hue-rotate(${Math.random() * 360}deg) drop-shadow(0 0 6px ${effect.color})`;
+      shard.style.animation = `crystal-shard-float ${6000 + Math.random() * 4000}ms ease-in-out infinite`;
 
       container.appendChild(shard);
     }
   };
 
   const createSpiritOrbsEffect = (container: HTMLElement, effect: Effect) => {
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     for (let i = 0; i < Math.min(particleCount, 20); i++) {
       const orb = document.createElement("div");
@@ -1090,9 +939,7 @@ export default function EffectsManager() {
       orb.style.top = `${Math.random() * 100}%`;
       orb.style.background = `radial-gradient(circle, ${effect.color} 0%, transparent 70%)`;
       orb.style.boxShadow = `0 0 ${effect.size * 4}px ${effect.color}`;
-      orb.style.animation = `spirit-orb-pulse ${
-        3000 + Math.random() * 2000
-      }ms ease-in-out infinite`;
+      orb.style.animation = `spirit-orb-pulse ${3000 + Math.random() * 2000}ms ease-in-out infinite`;
 
       container.appendChild(orb);
     }
@@ -1106,13 +953,9 @@ export default function EffectsManager() {
       beam.style.height = "100%";
       beam.style.left = `${15 + i * 15}%`;
       beam.style.top = "0";
-      beam.style.background = `linear-gradient(180deg, ${
-        effect.color
-      }${Math.floor(effect.opacity * 255).toString(16)} 0%, transparent 100%)`;
+      beam.style.background = `linear-gradient(180deg, ${effect.color}${Math.floor(effect.opacity * 255).toString(16)} 0%, transparent 100%)`;
       beam.style.filter = "blur(2px)";
-      beam.style.animation = `moonbeam-filter ${
-        8000 + i * 1000
-      }ms ease-in-out infinite`;
+      beam.style.animation = `moonbeam-filter ${8000 + i * 1000}ms ease-in-out infinite`;
       beam.style.animationDelay = `${i * 500}ms`;
 
       container.appendChild(beam);
@@ -1121,7 +964,7 @@ export default function EffectsManager() {
 
   const createTornadoEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createDebris = () => {
       const debris = document.createElement("div");
@@ -1130,9 +973,7 @@ export default function EffectsManager() {
       debris.style.fontSize = `${effect.size * 2}px`;
       debris.style.left = "50%";
       debris.style.bottom = "0";
-      debris.style.animation = `tornado-spiral ${
-        3000 / effect.speed
-      }ms ease-out forwards`;
+      debris.style.animation = `tornado-spiral ${3000 / effect.speed}ms ease-out forwards`;
 
       const radius = Math.random() * 200 + 50;
       const angle = Math.random() * 360;
@@ -1144,34 +985,27 @@ export default function EffectsManager() {
       timers.push(timer);
     };
 
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
     for (let i = 0; i < Math.min(particleCount, 80); i++) {
       const timer = setTimeout(() => createDebris(), Math.random() * 1000);
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createDebris,
-      Math.max(100, 300 - effect.intensity * 2)
-    );
+    const interval = setInterval(createDebris, Math.max(100, 300 - effect.intensity * 2));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
   const createVolcanicAshEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     const createAshParticle = () => {
       const ash = document.createElement("div");
@@ -1183,10 +1017,7 @@ export default function EffectsManager() {
       ash.style.top = "-30px";
       ash.style.background = `radial-gradient(circle, ${effect.color} 0%, #A9A9A9 50%, transparent 100%)`;
       ash.style.borderRadius = "50%";
-      ash.style.opacity = (
-        effect.opacity *
-        (0.6 + Math.random() * 0.4)
-      ).toString();
+      ash.style.opacity = (effect.opacity * (0.6 + Math.random() * 0.4)).toString();
       ash.style.filter = "blur(1px)";
 
       const windDrift = (Math.random() - 0.5) * 200;
@@ -1204,23 +1035,20 @@ export default function EffectsManager() {
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createAshParticle,
-      Math.max(80, 200 - effect.intensity)
-    );
+    const interval = setInterval(createAshParticle, Math.max(80, 200 - effect.intensity));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
   const createMeteorShowerEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createMeteor = () => {
       const meteor = document.createElement("div");
@@ -1232,11 +1060,7 @@ export default function EffectsManager() {
       meteor.style.top = `${Math.random() * 30}%`;
       meteor.style.background = `radial-gradient(circle, ${effect.color} 0%, #FF8C00 50%, transparent 100%)`;
       meteor.style.borderRadius = "50%";
-      meteor.style.boxShadow = `
-        0 0 ${size * 2}px ${effect.color}, 
-        0 0 ${size * 4}px #FF8C00,
-        0 0 ${size * 6}px #FF4500
-      `;
+      meteor.style.boxShadow = `0 0 ${size * 2}px ${effect.color}, 0 0 ${size * 4}px #FF8C00, 0 0 ${size * 6}px #FF4500`;
 
       const trail = document.createElement("div");
       trail.className = "absolute";
@@ -1256,26 +1080,21 @@ export default function EffectsManager() {
       timers.push(timer);
     };
 
-    const interval = setInterval(
-      createMeteor,
-      Math.max(1000, 3000 - effect.intensity * 20)
-    );
+    const interval = setInterval(createMeteor, Math.max(1000, 3000 - effect.intensity * 20));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
   const createSandstormEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     const createSandParticle = () => {
       const sand = document.createElement("div");
@@ -1287,16 +1106,11 @@ export default function EffectsManager() {
       sand.style.top = `${Math.random() * 100}%`;
       sand.style.background = `radial-gradient(circle, ${effect.color} 0%, #F4A460 50%, transparent 100%)`;
       sand.style.borderRadius = "50%";
-      sand.style.opacity = (
-        effect.opacity *
-        (0.5 + Math.random() * 0.5)
-      ).toString();
+      sand.style.opacity = (effect.opacity * (0.5 + Math.random() * 0.5)).toString();
       sand.style.filter = "blur(0.5px)";
 
       const speed = effect.speed + Math.random() * effect.speed;
-      sand.style.animation = `sandstorm-particle ${
-        3000 / speed
-      }ms linear forwards`;
+      sand.style.animation = `sandstorm-particle ${3000 / speed}ms linear forwards`;
 
       container.appendChild(sand);
       const timer = setTimeout(() => sand.remove(), 3000 / speed);
@@ -1304,34 +1118,23 @@ export default function EffectsManager() {
     };
 
     for (let i = 0; i < Math.min(particleCount, 150); i++) {
-      const timer = setTimeout(
-        () => createSandParticle(),
-        Math.random() * 2000
-      );
+      const timer = setTimeout(() => createSandParticle(), Math.random() * 2000);
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createSandParticle,
-      Math.max(50, 150 - effect.intensity)
-    );
+    const interval = setInterval(createSandParticle, Math.max(50, 150 - effect.intensity));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
 
-  const createBioluminescentPlanktonEffect = (
-    container: HTMLElement,
-    effect: Effect
-  ) => {
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+  const createBioluminescentPlanktonEffect = (container: HTMLElement, effect: Effect) => {
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     for (let i = 0; i < Math.min(particleCount, 100); i++) {
       const plankton = document.createElement("div");
@@ -1342,22 +1145,15 @@ export default function EffectsManager() {
       plankton.style.top = `${Math.random() * 100}%`;
       plankton.style.background = `radial-gradient(circle, ${effect.color} 0%, transparent 70%)`;
       plankton.style.boxShadow = `0 0 ${effect.size * 4}px ${effect.color}`;
-      plankton.style.animation = `bioluminescent-pulse ${
-        2 + Math.random() * 3
-      }s ease-in-out infinite`;
+      plankton.style.animation = `bioluminescent-pulse ${2 + Math.random() * 3}s ease-in-out infinite`;
       plankton.style.animationDelay = `${Math.random() * 2}s`;
 
       container.appendChild(plankton);
     }
   };
 
-  const createForestSpiritsEffect = (
-    container: HTMLElement,
-    effect: Effect
-  ) => {
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+  const createForestSpiritsEffect = (container: HTMLElement, effect: Effect) => {
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
 
     for (let i = 0; i < Math.min(particleCount, 15); i++) {
       const spirit = document.createElement("div");
@@ -1368,9 +1164,7 @@ export default function EffectsManager() {
       spirit.style.top = `${Math.random() * 100}%`;
       spirit.style.color = effect.color;
       spirit.style.filter = `drop-shadow(0 0 ${effect.size}px ${effect.color})`;
-      spirit.style.animation = `forest-spirit-dance ${
-        8 + Math.random() * 4
-      }s ease-in-out infinite`;
+      spirit.style.animation = `forest-spirit-dance ${8 + Math.random() * 4}s ease-in-out infinite`;
       spirit.style.animationDelay = `${Math.random() * 3}s`;
 
       container.appendChild(spirit);
@@ -1379,7 +1173,7 @@ export default function EffectsManager() {
 
   const createDragonBreathEffect = (container: HTMLElement, effect: Effect) => {
     const timers: (NodeJS.Timeout | number)[] = [];
-    (container as any).timers = timers;
+    (container as HTMLDivElement & { timers?: (NodeJS.Timeout | number)[] }).timers = timers;
 
     const createBreathParticle = () => {
       const particle = document.createElement("div");
@@ -1407,27 +1201,19 @@ export default function EffectsManager() {
       timers.push(timer);
     };
 
-    const particleCount = Math.floor(
-      (effect.particles * effect.intensity) / 100
-    );
+    const particleCount = Math.floor((effect.particles * effect.intensity) / 100);
     for (let i = 0; i < Math.min(particleCount, 80); i++) {
-      const timer = setTimeout(
-        () => createBreathParticle(),
-        Math.random() * 1000
-      );
+      const timer = setTimeout(() => createBreathParticle(), Math.random() * 1000);
       timers.push(timer);
     }
 
-    const interval = setInterval(
-      createBreathParticle,
-      Math.max(50, 150 - effect.intensity)
-    );
+    const interval = setInterval(createBreathParticle, Math.max(50, 150 - effect.intensity));
     timers.push(interval);
 
-    (container as any).cleanup = () => {
+    (container as HTMLDivElement & { cleanup?: () => void }).cleanup = () => {
       timers.forEach((timer) => {
         clearTimeout(timer);
-        clearInterval(timer as any);
+        clearInterval(timer as NodeJS.Timeout);
       });
     };
   };
@@ -1440,19 +1226,16 @@ export default function EffectsManager() {
       fog.style.height = `${effect.size}px`;
       fog.style.left = "-300px";
       fog.style.top = `${Math.random() * 100}%`;
-      fog.style.background = `radial-gradient(ellipse, ${
-        effect.color
-      }${Math.floor(effect.opacity * 255).toString(16)}, transparent)`;
+      fog.style.background = `radial-gradient(ellipse, ${effect.color}${Math.floor(effect.opacity * 255).toString(16)}, transparent)`;
       fog.style.borderRadius = "50%";
       fog.style.filter = "blur(3px)";
-      fog.style.animation = `fog-drift ${
-        12000 / effect.speed
-      }ms linear infinite`;
+      fog.style.animation = `fog-drift ${12000 / effect.speed}ms linear infinite`;
       fog.style.animationDelay = `${i * 1500}ms`;
 
       container.appendChild(fog);
     }
   };
+
 
   return (
     <>
