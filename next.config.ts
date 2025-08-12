@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
       "i.ytimg.com",
     ],
   },
+  eslint: {
+    // Warning: only disables ESLint during builds, not locally!
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;

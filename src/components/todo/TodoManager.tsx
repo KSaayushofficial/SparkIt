@@ -41,6 +41,32 @@ export default function TodoManager({
     high: "from-red-500 to-pink-500",
   };
 
+  const triggerAlarm = useCallback(
+    (todo: Todo) => {
+      if (
+        typeof window !== "undefined" &&
+        Notification.permission === "granted"
+      ) {
+        new Notification(`Task Reminder: ${todo.text}`, {
+          body: `It's time to work on your ${todo.priority} priority task!`,
+          icon: "/favicon.ico",
+        });
+      }
+
+      const audio = new Audio("/notification.mp3");
+      audio.play().catch(() => {
+        /* ignore play errors */
+      });
+
+      onNotification({
+        title: "Task Reminder",
+        message: `Time to work on: ${todo.text}`,
+        type: "alarm",
+      });
+    },
+    [onNotification]
+  );
+
   // Wrap checkAlarms in useCallback so we can add it as a dependency in useEffect
   const checkAlarms = useCallback(() => {
     const now = new Date();
@@ -54,35 +80,12 @@ export default function TodoManager({
         triggerAlarm(todo);
       }
     });
-  }, [todos]);
+  }, [todos, triggerAlarm]);
 
   useEffect(() => {
     const interval = setInterval(checkAlarms, 60000);
     return () => clearInterval(interval);
   }, [checkAlarms]);
-
-  const triggerAlarm = (todo: Todo) => {
-    if (
-      typeof window !== "undefined" &&
-      Notification.permission === "granted"
-    ) {
-      new Notification(`Task Reminder: ${todo.text}`, {
-        body: `It's time to work on your ${todo.priority} priority task!`,
-        icon: "/favicon.ico",
-      });
-    }
-
-    const audio = new Audio("/notification.mp3");
-    audio.play().catch(() => {
-      /* ignore play errors */
-    });
-
-    onNotification({
-      title: "Task Reminder",
-      message: `Time to work on: ${todo.text}`,
-      type: "alarm",
-    });
-  };
 
   const addTodo = () => {
     if (newTodo.trim()) {
@@ -135,7 +138,11 @@ export default function TodoManager({
     if (todo.isTimerRunning) {
       if (timers[id]) {
         clearInterval(timers[id]);
-        delete timers[id];
+        setTimers((prev) => {
+          const copy = { ...prev };
+          delete copy[id];
+          return copy;
+        });
       }
       setTodos(
         todos.map((t) => (t.id === id ? { ...t, isTimerRunning: false } : t))
@@ -155,7 +162,6 @@ export default function TodoManager({
       );
     }
   };
-
 
   const setAlarm = (id: string, time: string) => {
     setTodos(

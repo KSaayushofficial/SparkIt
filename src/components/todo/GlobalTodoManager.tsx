@@ -35,10 +35,9 @@ export default function GlobalTodoManager({
   const triggeredAlarmsRef = useRef<Set<string>>(new Set());
 
   // Create beep sound programmatically
-  const createBeepSound = () => {
+  const createBeepSound = useCallback(() => {
     if (typeof window !== "undefined" && "AudioContext" in window) {
       try {
-        // Use prefixed AudioContext for Safari compatibility
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
 
@@ -64,13 +63,13 @@ export default function GlobalTodoManager({
         console.warn("Could not create audio context for beep sound:", error);
       }
     }
-  };
+  }, []);
 
-  const playAlarmSound = () => {
+  const playAlarmSound = useCallback(() => {
     createBeepSound();
     setTimeout(() => createBeepSound(), 200);
     setTimeout(() => createBeepSound(), 400);
-  };
+  }, [createBeepSound]);
 
   // Wrap checkForAlarms in useCallback so it can be added as effect dependency
   const checkForAlarms = useCallback(() => {
@@ -136,7 +135,7 @@ export default function GlobalTodoManager({
         }
       }
     });
-  }, [todos, onNotification, setTodos]);
+  }, [todos, onNotification, setTodos, playAlarmSound]);
 
   // Request permission and set interval for alarm checking
   useEffect(() => {
@@ -240,7 +239,7 @@ export default function GlobalTodoManager({
         }
       }, duration * 1000);
     },
-    [todos, onNotification, setTodos]
+    [todos, onNotification, setTodos, playAlarmSound]
   );
 
   const stopTimer = useCallback(
