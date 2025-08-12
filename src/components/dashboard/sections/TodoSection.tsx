@@ -26,11 +26,6 @@ import {
 import GlassPanel from "@/components/ui/GlassPanel";
 import type { Todo } from "../types";
 
-interface Notification {
-  type: "success" | "info" | "error" | string;
-  title: string;
-  message: string;
-}
 
 interface TodoSectionProps {
   todos: Todo[];

@@ -17,12 +17,7 @@ import {
 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 
-// Define a type for the notification object
-interface Notification {
-  type: "success" | "error" | "info" | "warning";
-  title: string;
-  message: string;
-}
+
 
 // Update the props interface to use the new Notification type
 interface StressSectionProps {
