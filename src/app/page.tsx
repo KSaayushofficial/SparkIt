@@ -22,6 +22,8 @@ import type {
   Notification,
   Milestone,
 } from "@/components/dashboard/types";
+import Image from "next/image";
+import LoadingScreen from "@/components/LoadingScreen";
 
 // Define types for the parsed localStorage data
 interface ParsedTodo
@@ -247,9 +249,7 @@ export default function Dashboard() {
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
+      <LoadingScreen />
     );
   }
 
@@ -293,7 +293,7 @@ export default function Dashboard() {
       <div className="fixed top-4 right-4 z-50 space-y-2">
         {notifications.map((notification) => (
           <div
-            key={notification.id}
+            key={crypto.randomUUID()}
             className={`p-4 rounded-lg backdrop-blur-md border shadow-lg max-w-sm transition-all duration-300 ${
               notification.type === "alarm"
                 ? "bg-red-500/90 border-red-400 text-white animate-pulse"

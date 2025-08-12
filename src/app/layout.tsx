@@ -1,13 +1,15 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
-import MusicComponent from "@/components/audio/MusicComponent"; 
+import { LayoutClientWrapper } from "./LayoutClientWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "FocusFlow Dashboard",
-  description: "A modern dashboard for focusers",
+  title: "Spark It",
+  description: "Spark It — Ignite Your Productivity",
+  icons: {
+    icon: "/favicon.ico",  
+  },
 };
 
 export default function RootLayout({
@@ -17,16 +19,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon.ico" />
+      </head>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <MusicComponent /> {/* mounted once, invisible on other pages */}
-        </ThemeProvider>
+        <LayoutClientWrapper>{children}</LayoutClientWrapper>
       </body>
     </html>
   );

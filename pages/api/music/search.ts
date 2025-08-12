@@ -16,6 +16,24 @@ interface ApiResponse {
 const cache: { [key: string]: { timestamp: number; data: Track[] } } = {};
 const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
+function promiseTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error("Operation timed out"));
+    }, ms);
+
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
 function isVideoSearchResult(video: unknown): video is VideoSearchResult {
   if (typeof video !== "object" || video === null) return false;
 
@@ -26,13 +44,11 @@ function isVideoSearchResult(video: unknown): video is VideoSearchResult {
     typeof v.author === "object" &&
     v.author !== null &&
     typeof (v.author as Record<string, unknown>).name === "string" &&
-    // Ensure thumbnail exists and is a string
     typeof v.thumbnail === "string"
   );
 }
 
 function getThumbnail(video: VideoSearchResult): string {
-  // Provide a fallback thumbnail if none exists
   return video.thumbnail || "https://i.ytimg.com/vi/default.jpg";
 }
 
@@ -68,7 +84,7 @@ export default async function handler(
     const label = `yt-search-${Date.now()}-${Math.random()}`;
     console.time(label);
 
-    const searchResults = await yts(query);
+    const searchResults = await promiseTimeout(yts(query), 7000); // 7s timeout
 
     console.timeEnd(label);
 
@@ -80,7 +96,7 @@ export default async function handler(
           id: video.videoId,
           title: video.title,
           channel: video.author.name,
-          thumbnail: getThumbnail(video), // Use the safe thumbnail getter
+          thumbnail: getThumbnail(video),
         })
       );
 
@@ -96,7 +112,10 @@ export default async function handler(
     console.error("yt-search error:", error);
     return res.status(500).json({
       tracks: [],
-      error: "Failed to fetch videos",
+      error:
+        error instanceof Error && error.message === "Operation timed out"
+          ? "Search operation timed out"
+          : "Failed to fetch videos",
     });
   }
 }

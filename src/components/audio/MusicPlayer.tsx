@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { PiFlowerLotusDuotone } from "react-icons/pi";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MusicPlayerProps {
   title: string;
@@ -22,6 +23,7 @@ export default function MusicPlayer({
   const [relaxMode, setRelaxMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [randomHeights, setRandomHeights] = useState<number[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const heights = Array.from(
@@ -31,9 +33,17 @@ export default function MusicPlayer({
     setRandomHeights(heights);
   }, [previewUrl]);
 
+  useEffect(() => {
+    setLoading(true);
+  }, [previewUrl]);
+
+  const onIframeLoad = () => {
+    setLoading(false);
+  };
+
   return (
     <div className="w-[420px] p-5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl text-white relative overflow-hidden">
-      {/* Top Controls: Search input + Relax Mode toggle */}
+      {/* Top Controls */}
       <div className="flex items-center justify-center gap-3 mb-4">
         <input
           onChange={(e) => {
@@ -69,59 +79,93 @@ export default function MusicPlayer({
           frameBorder="0"
           allow="autoplay"
           allowFullScreen
+          onLoad={onIframeLoad}
         ></iframe>
       )}
 
-      {/* Normal Mode View */}
+      {/* Normal Mode View - show skeleton or actual content */}
       {!relaxMode && (
-        <div className="flex flex-col items-center">
-          {/* Info Row */}
-          <div className="flex w-full gap-3 items-center">
-            <Image
-              src={cover || "/default_cover.png"}
-              alt="album cover"
-              width={80}
-              height={80}
-              className="w-20 h-20 rounded-xl object-cover shadow-lg"
-              priority
-            />
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <div className="relative w-full h-[24px] overflow-hidden">
-                <div
-                  className="animated-title-container"
-                  style={{
-                    animationPlayState:
-                      title.length > 28 ? "running" : "paused",
-                    animationDuration: `${Math.min(title.length / 5, 12)}s`,
-                  }}
-                >
-                  <span className="animated-text">{title}</span>
+        <>
+          {loading ? (
+            // Skeleton layout matches original layout exactly
+            <div className="flex flex-col items-center">
+              <div className="flex w-full gap-3 items-center">
+                {/* Thumbnail Skeleton */}
+                <Skeleton className="w-20 h-20 rounded-xl" />
+                {/* Title & Artist Skeleton */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  <Skeleton className="h-6 w-full mb-2 rounded-md" />
+                  <Skeleton className="h-4 w-3/4 rounded-md" />
                 </div>
               </div>
-              <p className="text-sm mt-1 animated-text truncate">{artist}</p>
-            </div>
-          </div>
 
-          {/* Frequency Bars */}
-          {previewUrl && (
-            <div className="flex justify-center items-end gap-[4px] w-full mt-6 h-12 px-2">
-              {randomHeights.map((height, i) => (
-                <div
-                  key={i}
-                  className="rounded-sm glowing-bar"
-                  style={{
-                    height: `${height}px`,
-                    animationDelay: `${i * 0.05}s`,
-                    width: "3px",
-                  }}
-                ></div>
-              ))}
+              {/* Frequency Bars Skeleton */}
+              <div className="flex justify-center items-end gap-[4px] w-full mt-6 h-12 px-2">
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <Skeleton
+                    key={i}
+                    className="rounded-sm"
+                    style={{
+                      width: "3px",
+                      height: `${10 + (i % 4) * 10}px`, // simple varying heights
+                      animationDelay: `${i * 0.05}s`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            // Original layout — no changes here
+            <div className="flex flex-col items-center">
+              <div className="flex w-full gap-3 items-center">
+                <Image
+                  src={cover || "/default_cover.png"}
+                  alt="album cover"
+                  width={80}
+                  height={80}
+                  className="w-20 h-20 rounded-xl object-cover shadow-lg"
+                  priority
+                />
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  <div className="relative w-full h-[24px] overflow-hidden">
+                    <div
+                      className="animated-title-container"
+                      style={{
+                        animationPlayState:
+                          title.length > 28 ? "running" : "paused",
+                        animationDuration: `${Math.min(title.length / 5, 12)}s`,
+                      }}
+                    >
+                      <span className="animated-text">{title}</span>
+                    </div>
+                  </div>
+                  <p className="text-sm mt-1 animated-text truncate">
+                    {artist}
+                  </p>
+                </div>
+              </div>
+
+              {previewUrl && (
+                <div className="flex justify-center items-end gap-[4px] w-full mt-6 h-12 px-2">
+                  {randomHeights.map((height, i) => (
+                    <div
+                      key={i}
+                      className="rounded-sm glowing-bar"
+                      style={{
+                        height: `${height}px`,
+                        animationDelay: `${i * 0.05}s`,
+                        width: "3px",
+                      }}
+                    ></div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
 
-      {/* Styles */}
+      {/* Styles (your original styles) */}
       <style jsx>{`
         .animated-text {
           background: linear-gradient(

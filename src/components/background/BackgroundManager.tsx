@@ -79,34 +79,37 @@ export default function BackgroundManager() {
     []
   );
 
-  const applyImageBackground = useCallback(
-    async (container: HTMLElement, background: Background) => {
-      return new Promise<void>((resolve, reject) => {
-        const img = document.createElement("div");
-        img.className =
-          "absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000";
-        img.style.opacity = (background.opacity / 100).toString();
-        img.style.filter = `blur(${background.blur}px)`;
+const applyImageBackground = useCallback(
+  async (container: HTMLElement, background: Background) => {
+    return new Promise<void>((resolve, reject) => {
+      const img = document.createElement("div");
+      img.className =
+        "absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000";
+      img.style.opacity = (background.opacity / 100).toString();
+      img.style.filter = `blur(${background.blur}px)`;
 
+      const preloadImg = new Image();
+      preloadImg.onload = () => {
         if (background.url) {
           img.style.backgroundImage = `url(${background.url})`;
         } else {
           img.style.backgroundImage = `url(/placeholder.svg?height=1080&width=1920)`;
         }
-
-        const preloadImg = new Image();
-        preloadImg.onload = () => {
-          container.appendChild(img);
-          resolve();
-        };
-        preloadImg.onerror = () => {
-          reject(new Error("Failed to load image"));
-        };
-        preloadImg.src = background.url || "/placeholder.svg?height=1080&width=1920";
-      });
-    },
-    []
-  );
+        container.appendChild(img);
+        resolve();
+      };
+      preloadImg.onerror = () => {
+        // Fallback to placeholder if image fails to load
+        img.style.backgroundImage = `url(/placeholder.svg?height=1080&width=1920)`;
+        container.appendChild(img);
+        resolve();
+      };
+      preloadImg.src =
+        background.url || "/placeholder.svg?height=1080&width=1920";
+    });
+  },
+  []
+);
 
   const applyInteractiveBackground = useCallback(
     async (container: HTMLElement, background: Background) => {

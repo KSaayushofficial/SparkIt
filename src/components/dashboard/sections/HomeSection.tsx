@@ -50,7 +50,7 @@ const motivationalQuotes = [
     category: "resilience",
   },
   {
-    text: "Your limitation—it&apos;s only your imagination.",
+    text: "Your limitation is only your imagination.",
     author: "Unknown",
     category: "potential",
   },
@@ -70,7 +70,7 @@ const motivationalQuotes = [
     category: "action",
   },
   {
-    text: "Success doesn&apos;t just find you. You have to go out and get it.",
+    text: "Success does not just find you",
     author: "Unknown",
     category: "achievement",
   },
