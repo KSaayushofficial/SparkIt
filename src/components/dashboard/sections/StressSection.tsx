@@ -21,7 +21,7 @@ import GlassPanel from "@/components/ui/GlassPanel";
 
 // Update the props interface to use the new Notification type
 interface StressSectionProps {
-  onNotification: (notification: any) => void;
+  onNotification: (notification: unknown) => void;
 }
 
 interface WellnessActivity {
