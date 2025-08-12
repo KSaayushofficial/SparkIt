@@ -44,7 +44,7 @@ interface Milestone {
 // }
 
 interface GoalsSectionProps {
-  onNotification: (notification: unknown) => void;
+  onNotification: (notification: any) => void;
 }
 
 const categories = [

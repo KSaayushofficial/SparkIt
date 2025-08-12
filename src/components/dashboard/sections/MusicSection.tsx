@@ -21,7 +21,7 @@ import GlassPanel from "@/components/ui/GlassPanel";
 // }
 
 interface MusicSectionProps {
-  onNotification: (notification: unknown) => void;
+  onNotification: (notification: any) => void;
 }
 
 interface AmbientSound {

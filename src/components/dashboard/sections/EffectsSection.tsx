@@ -46,7 +46,7 @@ import GlassPanel from "@/components/ui/GlassPanel";
 // }
 
 interface EffectsSectionProps {
-  onNotification: (notification: unknown) => void;
+  onNotification: (notification: any) => void;
 }
 
 const iconMap = {

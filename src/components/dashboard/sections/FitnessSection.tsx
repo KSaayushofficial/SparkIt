@@ -25,7 +25,7 @@ import GlassPanel from "@/components/ui/GlassPanel";
 // }
 
 interface FitnessSectionProps {
-  onNotification: (notification: unknown) => void;
+  onNotification: (notification: any) => void;
 }
 
 interface Exercise {
