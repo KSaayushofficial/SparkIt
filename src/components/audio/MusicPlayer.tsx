@@ -42,9 +42,9 @@ export default function MusicPlayer({
   };
 
   return (
-    <div className="w-[420px] p-5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl text-white relative overflow-hidden">
+    <div className="w-full sm:w-[420px] p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg sm:shadow-xl text-white relative overflow-hidden">
       {/* Top Controls */}
-      <div className="flex items-center justify-center gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
         <input
           onChange={(e) => {
             setSearchQuery(e.target.value);
@@ -53,13 +53,13 @@ export default function MusicPlayer({
           value={searchQuery}
           type="text"
           placeholder="Search for a song..."
-          className="flex-grow min-w-0 px-4 py-2 rounded-xl bg-white/10 border border-white/20 placeholder:text-white/50 text-white focus:outline-none focus:ring-2 focus:ring-white/30 transition"
+          className="w-full sm:flex-grow min-w-0 px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl bg-white/10 border border-white/20 placeholder:text-white/50 text-white focus:outline-none focus:ring-2 focus:ring-white/30 transition text-sm sm:text-base"
         />
         <button
           onClick={() => setRelaxMode(!relaxMode)}
-          className="text-white px-4 py-1 rounded-full bg-white/10 hover:bg-white/20 transition border border-white/30 flex items-center gap-2 text-sm whitespace-nowrap"
+          className="w-full sm:w-auto text-white px-3 sm:px-4 py-1 rounded-full bg-white/10 hover:bg-white/20 transition border border-white/30 flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
         >
-          <PiFlowerLotusDuotone className="text-xl" />
+          <PiFlowerLotusDuotone className="text-lg sm:text-xl" />
           {relaxMode ? "Relax Mode : OFF" : "Relax Mode : ON"}
         </button>
       </div>
@@ -68,11 +68,11 @@ export default function MusicPlayer({
       {previewUrl && (
         <iframe
           width="100%"
-          height="200"
+          height="180"
           style={{
             display: relaxMode ? "block" : "none",
-            marginTop: "12px",
-            borderRadius: "20px",
+            marginTop: "8px",
+            borderRadius: "16px",
           }}
           src={`https://www.youtube.com/embed/${previewUrl}?autoplay=1&controls=1&mute=0&modestbranding=1`}
           title="YouTube video player"
@@ -89,25 +89,25 @@ export default function MusicPlayer({
           {loading ? (
             // Skeleton layout matches original layout exactly
             <div className="flex flex-col items-center">
-              <div className="flex w-full gap-3 items-center">
+              <div className="flex w-full gap-2 sm:gap-3 items-center">
                 {/* Thumbnail Skeleton */}
-                <Skeleton className="w-20 h-20 rounded-xl" />
+                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl" />
                 {/* Title & Artist Skeleton */}
                 <div className="flex-1 flex flex-col overflow-hidden">
-                  <Skeleton className="h-6 w-full mb-2 rounded-md" />
-                  <Skeleton className="h-4 w-3/4 rounded-md" />
+                  <Skeleton className="h-5 sm:h-6 w-full mb-1 sm:mb-2 rounded-md" />
+                  <Skeleton className="h-3 sm:h-4 w-3/4 rounded-md" />
                 </div>
               </div>
 
               {/* Frequency Bars Skeleton */}
-              <div className="flex justify-center items-end gap-[4px] w-full mt-6 h-12 px-2">
+              <div className="flex justify-center items-end gap-[3px] sm:gap-[4px] w-full mt-4 sm:mt-6 h-10 sm:h-12 px-1 sm:px-2">
                 {Array.from({ length: 24 }).map((_, i) => (
                   <Skeleton
                     key={i}
                     className="rounded-sm"
                     style={{
-                      width: "3px",
-                      height: `${10 + (i % 4) * 10}px`, // simple varying heights
+                      width: "2px",
+                      height: `${10 + (i % 4) * 8}px`, // simple varying heights
                       animationDelay: `${i * 0.05}s`,
                     }}
                   />
@@ -115,19 +115,19 @@ export default function MusicPlayer({
               </div>
             </div>
           ) : (
-            // Original layout — no changes here
+            // Original layout — with responsive adjustments
             <div className="flex flex-col items-center">
-              <div className="flex w-full gap-3 items-center">
+              <div className="flex w-full gap-2 sm:gap-3 items-center">
                 <Image
                   src={cover || "/default_cover.png"}
                   alt="album cover"
                   width={80}
                   height={80}
-                  className="w-20 h-20 rounded-xl object-cover shadow-lg"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-md sm:shadow-lg"
                   priority
                 />
                 <div className="flex-1 flex flex-col overflow-hidden">
-                  <div className="relative w-full h-[24px] overflow-hidden">
+                  <div className="relative w-full h-[20px] sm:h-[24px] overflow-hidden">
                     <div
                       className="animated-title-container"
                       style={{
@@ -136,17 +136,19 @@ export default function MusicPlayer({
                         animationDuration: `${Math.min(title.length / 5, 12)}s`,
                       }}
                     >
-                      <span className="animated-text">{title}</span>
+                      <span className="animated-text text-sm sm:text-base">
+                        {title}
+                      </span>
                     </div>
                   </div>
-                  <p className="text-sm mt-1 animated-text truncate">
+                  <p className="text-xs sm:text-sm mt-1 animated-text truncate">
                     {artist}
                   </p>
                 </div>
               </div>
 
               {previewUrl && (
-                <div className="flex justify-center items-end gap-[4px] w-full mt-6 h-12 px-2">
+                <div className="flex justify-center items-end gap-[3px] sm:gap-[4px] w-full mt-4 sm:mt-6 h-10 sm:h-12 px-1 sm:px-2">
                   {randomHeights.map((height, i) => (
                     <div
                       key={i}
@@ -154,7 +156,7 @@ export default function MusicPlayer({
                       style={{
                         height: `${height}px`,
                         animationDelay: `${i * 0.05}s`,
-                        width: "3px",
+                        width: "2px",
                       }}
                     ></div>
                   ))}
@@ -165,7 +167,7 @@ export default function MusicPlayer({
         </>
       )}
 
-      {/* Styles (your original styles) */}
+      {/* Styles (your original styles with responsive adjustments) */}
       <style jsx>{`
         .animated-text {
           background: linear-gradient(
@@ -218,8 +220,8 @@ export default function MusicPlayer({
 
         .glowing-bar {
           background: linear-gradient(to top, #ff80bf, #8ec5fc);
-          box-shadow: 0 0 6px rgba(255, 200, 255, 0.6),
-            0 0 12px rgba(100, 150, 255, 0.4);
+          box-shadow: 0 0 4px rgba(255, 200, 255, 0.6),
+            0 0 8px rgba(100, 150, 255, 0.4);
           box-sizing: border-box;
           animation: pulseGlow 1.5s ease-in-out infinite;
         }

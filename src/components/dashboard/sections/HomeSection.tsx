@@ -27,7 +27,6 @@ interface HomeSectionProps {
   ) => void;
 }
 
-
 const motivationalQuotes = [
   {
     text: "The only way to do great work is to love what you do.",
@@ -75,12 +74,12 @@ const motivationalQuotes = [
     category: "achievement",
   },
   {
-    text: "The harder you work for something, the greater you&apos;ll feel when you achieve it.",
+    text: "The harder you work for something, the greater you will feel when you achieve it.",
     author: "Unknown",
     category: "effort",
   },
   {
-    text: "Don&apos;t stop when you&apos;re tired. Stop when you&apos;re done.",
+    text: "Do not stop stop when you are tired. Stop when you are done.",
     author: "Unknown",
     category: "persistence",
   },
@@ -185,90 +184,109 @@ export default function HomeSection({ onNotification }: HomeSectionProps) {
     return "Good Evening";
   };
 
-return (
-  <div className="min-h-screen w-full px-6 py-4 flex flex-col justify-between">
-    {" "}
-    <div className="flex flex-col gap-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-          {getGreeting()}!
-        </h1>
-        <p className="text-white/70">Welcome to your productivity sanctuary</p>
-      </div>
-
-      <div className="flex flex-wrap gap-6">
-        <div className="grid grid-cols-2 gap-4 flex-1 min-w-[300px] max-w-[50%]">
-          <GlassPanel className="p-4 text-center" glow>
-            <Clock className="text-blue-400 mx-auto mb-2" size={24} />
-            <p className="text-white font-semibold">
-              {formatTime(currentTime)}
-            </p>
-            <p className="text-white/70 text-xs">{formatDate(currentTime)}</p>
-          </GlassPanel>
-
-          <GlassPanel className="p-4 text-center" glow>
-            <Target className="text-green-400 mx-auto mb-2" size={24} />
-            <p className="text-white font-semibold">Stay Focused</p>
-            <p className="text-white/70 text-xs">Your goals await</p>
-          </GlassPanel>
-
-          <GlassPanel className="p-4 text-center" glow>
-            <TrendingUp className="text-purple-400 mx-auto mb-2" size={24} />
-            <p className="text-white font-semibold">Keep Growing</p>
-            <p className="text-white/70 text-xs">Every step counts</p>
-          </GlassPanel>
-
-          <GlassPanel className="p-4 text-center" glow>
-            <Calendar className="text-orange-400 mx-auto mb-2" size={24} />
-            <p className="text-white font-semibold">{currentTime.getDate()}</p>
-            <p className="text-white/70 text-xs">
-              {currentTime.toLocaleDateString("en-US", {
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
-          </GlassPanel>
+  return (
+    <div className="min-h-screen w-full px-4 sm:px-6 py-4 flex flex-col justify-between">
+      <div className="flex flex-col gap-4 sm:gap-6">
+        <div className="text-center">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            {getGreeting()}!
+          </h1>
+          <p className="text-white/70 text-sm sm:text-base">
+            Welcome to your productivity sanctuary
+          </p>
         </div>
 
-        <GlassPanel className="p-6 flex-1 min-w-[300px]" glow>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 text-white font-semibold text-base">
-              <Quote size={18} />
-              Inspiration
-            </div>
-            <motion.button
-              whileHover={{ rotate: 180, scale: 1.05 }}
-              onClick={refreshQuote}
-              disabled={isRefreshing}
-              className="p-1 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-50 transition"
-            >
-              <RefreshCw
-                className={`${isRefreshing ? "animate-spin" : ""}`}
-                size={14}
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full sm:flex-1 sm:min-w-[300px] sm:max-w-[50%]">
+            <GlassPanel className="p-3 sm:p-4 text-center" glow>
+              <Clock className="text-blue-400 mx-auto mb-1 sm:mb-2" size={20} />
+              <p className="text-white font-semibold text-sm sm:text-base">
+                {formatTime(currentTime)}
+              </p>
+              <p className="text-white/70 text-xs">{formatDate(currentTime)}</p>
+            </GlassPanel>
+
+            <GlassPanel className="p-3 sm:p-4 text-center" glow>
+              <Target
+                className="text-green-400 mx-auto mb-1 sm:mb-2"
+                size={20}
               />
-            </motion.button>
+              <p className="text-white font-semibold text-sm sm:text-base">
+                Stay Focused
+              </p>
+              <p className="text-white/70 text-xs">Your goals await</p>
+            </GlassPanel>
+
+            <GlassPanel className="p-3 sm:p-4 text-center" glow>
+              <TrendingUp
+                className="text-purple-400 mx-auto mb-1 sm:mb-2"
+                size={20}
+              />
+              <p className="text-white font-semibold text-sm sm:text-base">
+                Keep Growing
+              </p>
+              <p className="text-white/70 text-xs">Every step counts</p>
+            </GlassPanel>
+
+            <GlassPanel className="p-3 sm:p-4 text-center" glow>
+              <Calendar
+                className="text-orange-400 mx-auto mb-1 sm:mb-2"
+                size={20}
+              />
+              <p className="text-white font-semibold text-sm sm:text-base">
+                {currentTime.getDate()}
+              </p>
+              <p className="text-white/70 text-xs">
+                {currentTime.toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            </GlassPanel>
           </div>
 
-          <div className="text-center">
-            <blockquote className="text-sm text-white italic leading-relaxed">
-              &quot;{currentQuote.text}&quot;
-            </blockquote>
-            <div className="text-white/70 text-xs mt-2">
-              — {currentQuote.author}
+          <GlassPanel
+            className="p-4 sm:p-6 w-full sm:flex-1 sm:min-w-[300px]"
+            glow
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-white font-semibold text-sm sm:text-base">
+                <Quote size={16} />
+                Inspiration
+              </div>
+              <motion.button
+                whileHover={{ rotate: 180, scale: 1.05 }}
+                onClick={refreshQuote}
+                disabled={isRefreshing}
+                className="p-1 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-50 transition"
+              >
+                <RefreshCw
+                  className={`${isRefreshing ? "animate-spin" : ""}`}
+                  size={14}
+                />
+              </motion.button>
             </div>
-            <div
-              className={`mt-1 inline-block px-2 py-0.5 rounded-full text-white text-xs bg-gradient-to-r ${
-                categoryColors[
-                  currentQuote.category as keyof typeof categoryColors
-                ]
-              }`}
-            >
-              {currentQuote.category.replace("-", " ")}
+
+            <div className="text-center">
+              <blockquote className="text-xs sm:text-sm text-white italic leading-relaxed">
+                &quot;{currentQuote.text}&quot;
+              </blockquote>
+              <div className="text-white/70 text-xs mt-2">
+                — {currentQuote.author}
+              </div>
+              <div
+                className={`mt-1 inline-block px-2 py-0.5 rounded-full text-white text-xs bg-gradient-to-r ${
+                  categoryColors[
+                    currentQuote.category as keyof typeof categoryColors
+                  ]
+                }`}
+              >
+                {currentQuote.category.replace("-", " ")}
+              </div>
             </div>
-          </div>
-        </GlassPanel>
+          </GlassPanel>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 }

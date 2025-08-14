@@ -36,13 +36,6 @@ interface Milestone {
   completedAt?: Date;
 }
 
-// Define the type for the notification object
-// interface Notification {
-//   type: "success" | "info" | "error";
-//   title: string;
-//   message: string;
-// }
-
 interface GoalsSectionProps {
   onNotification: (notification: any) => void;
 }
@@ -80,7 +73,6 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
   useEffect(() => {
     const savedGoals = localStorage.getItem("goals");
     if (savedGoals) {
-      // Parse goals and convert deadline strings to Date objects
       const parsedGoals = JSON.parse(savedGoals, (key, value) => {
         if (
           key === "deadline" ||
@@ -209,18 +201,18 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
       : 0;
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="h-full overflow-y-auto custom-scrollbar px-2 sm:px-4">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="text-center"
         >
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-1 sm:mb-2">
             Goal Planner
           </h1>
-          <p className="text-white/70">
+          <p className="text-sm sm:text-base text-white/70">
             Set ambitious goals and track your journey to success
           </p>
         </motion.div>
@@ -231,36 +223,42 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <GlassPanel className="p-4 text-center" glow>
-              <div className="text-2xl font-bold text-white mb-1">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+            <GlassPanel className="p-3 sm:p-4 text-center" glow>
+              <div className="text-xl sm:text-2xl font-bold text-white mb-1">
                 {goals.length}
               </div>
-              <div className="text-white/70 text-sm">Total Goals</div>
+              <div className="text-xs sm:text-sm text-white/70">
+                Total Goals
+              </div>
             </GlassPanel>
 
-            <GlassPanel className="p-4 text-center" glow>
-              <div className="text-2xl font-bold text-white mb-1">
+            <GlassPanel className="p-3 sm:p-4 text-center" glow>
+              <div className="text-xl sm:text-2xl font-bold text-white mb-1">
                 {activeGoals.length}
               </div>
-              <div className="text-white/70 text-sm">Active Goals</div>
+              <div className="text-xs sm:text-sm text-white/70">
+                Active Goals
+              </div>
             </GlassPanel>
 
-            <GlassPanel className="p-4 text-center" glow>
-              <div className="text-2xl font-bold text-white mb-1">
+            <GlassPanel className="p-3 sm:p-4 text-center" glow>
+              <div className="text-xl sm:text-2xl font-bold text-white mb-1">
                 {completedGoals.length}
               </div>
-              <div className="text-white/70 text-sm">Completed</div>
+              <div className="text-xs sm:text-sm text-white/70">Completed</div>
             </GlassPanel>
 
-            <GlassPanel className="p-4 text-center" glow>
-              <div className="text-2xl font-bold text-white mb-1">
+            <GlassPanel className="p-3 sm:p-4 text-center" glow>
+              <div className="text-xl sm:text-2xl font-bold text-white mb-1">
                 {overallProgress}%
               </div>
-              <div className="text-white/70 text-sm">Success Rate</div>
-              <div className="w-full bg-white/10 rounded-full h-2 mt-2">
+              <div className="text-xs sm:text-sm text-white/70">
+                Success Rate
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-1.5 sm:h-2 mt-1 sm:mt-2">
                 <div
-                  className="bg-gradient-to-r from-indigo-400 to-purple-400 h-2 rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-indigo-400 to-purple-400 h-1.5 sm:h-2 rounded-full transition-all duration-500"
                   style={{ width: `${overallProgress}%` }}
                 />
               </div>
@@ -274,14 +272,16 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <GlassPanel className="p-6" glow>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-semibold text-lg">Add New Goal</h3>
+          <GlassPanel className="p-4 sm:p-6" glow>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-white font-semibold text-base sm:text-lg">
+                Add New Goal
+              </h3>
               <button
                 onClick={() => setShowAddForm(!showAddForm)}
-                className="p-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition-colors"
+                className="p-1.5 sm:p-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition-colors"
               >
-                <Plus size={20} />
+                <Plus size={18} className="sm:w-5 sm:h-5" />
               </button>
             </div>
 
@@ -291,9 +291,9 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="space-y-4"
+                  className="space-y-3 sm:space-y-4"
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <input
                       type="text"
                       value={newGoal.title}
@@ -301,7 +301,7 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                         setNewGoal({ ...newGoal, title: e.target.value })
                       }
                       placeholder="Goal title..."
-                      className="bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     />
 
                     <select
@@ -309,7 +309,7 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                       onChange={(e) =>
                         setNewGoal({ ...newGoal, category: e.target.value })
                       }
-                      className="bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     >
                       {categories.map((cat) => (
                         <option key={cat} value={cat} className="bg-gray-800">
@@ -326,20 +326,19 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                     }
                     placeholder="Goal description..."
                     rows={3}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
                     <select
                       value={newGoal.priority}
                       onChange={(e) =>
                         setNewGoal({
                           ...newGoal,
-                          // Correctly casting the value to the specific union type
                           priority: e.target.value as "low" | "medium" | "high",
                         })
                       }
-                      className="bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     >
                       {Object.entries(priorities).map(([key, { label }]) => (
                         <option key={key} value={key} className="bg-gray-800">
@@ -359,7 +358,7 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                       }
                       placeholder="Target"
                       min="1"
-                      className="bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     />
 
                     <input
@@ -369,7 +368,7 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                         setNewGoal({ ...newGoal, unit: e.target.value })
                       }
                       placeholder="Unit (e.g., kg, hours)"
-                      className="bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     />
 
                     <input
@@ -378,13 +377,13 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                       onChange={(e) =>
                         setNewGoal({ ...newGoal, deadline: e.target.value })
                       }
-                      className="bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     />
                   </div>
 
                   <button
                     onClick={addGoal}
-                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white py-3 rounded-lg font-medium transition-all duration-200"
+                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white py-2 sm:py-3 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base"
                   >
                     Add Goal
                   </button>
@@ -400,20 +399,20 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <GlassPanel className="p-6" glow>
-            <h3 className="text-white font-semibold text-lg mb-6">
+          <GlassPanel className="p-4 sm:p-6" glow>
+            <h3 className="text-white font-semibold text-base sm:text-lg mb-4 sm:mb-6">
               Active Goals
             </h3>
 
             {activeGoals.length === 0 ? (
-              <div className="text-center py-12">
-                <Target className="text-white/30 mx-auto mb-4" size={48} />
-                <p className="text-white/50">
+              <div className="text-center py-8 sm:py-12">
+                <Target className="text-white/30 mx-auto mb-3 sm:mb-4 h-10 w-10 sm:h-12 sm:w-12" />
+                <p className="text-sm sm:text-base text-white/50">
                   No active goals. Set your first goal to get started!
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
                 <AnimatePresence>
                   {activeGoals.map((goal) => {
                     const progressPercentage = Math.min(
@@ -430,18 +429,18 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         whileHover={{ scale: 1.02 }}
-                        className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-all duration-300"
+                        className="bg-white/5 border border-white/10 rounded-lg sm:rounded-xl p-4 sm:p-6 hover:bg-white/10 transition-all duration-300"
                       >
-                        <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-start justify-between mb-3 sm:mb-4">
                           <div className="flex-1">
-                            <h4 className="text-white font-medium text-lg mb-2">
+                            <h4 className="text-white font-medium text-base sm:text-lg mb-1 sm:mb-2">
                               {goal.title}
                             </h4>
-                            <p className="text-white/70 text-sm mb-3">
+                            <p className="text-white/70 text-xs sm:text-sm mb-2 sm:mb-3">
                               {goal.description}
                             </p>
 
-                            <div className="flex items-center gap-2 mb-3">
+                            <div className="flex items-center gap-2 mb-2 sm:mb-3">
                               <span
                                 className={`px-2 py-1 rounded-full text-xs bg-gradient-to-r ${
                                   priorities[goal.priority].color
@@ -455,38 +454,38 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="flex gap-1 sm:gap-2">
                             <button
                               onClick={() => setEditingGoal(goal)}
-                              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                              className="p-1.5 sm:p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
                             >
-                              <Edit3 size={16} />
+                              <Edit3 size={14} className="sm:w-4 sm:h-4" />
                             </button>
                             <button
                               onClick={() => deleteGoal(goal.id)}
-                              className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
+                              className="p-1.5 sm:p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={14} className="sm:w-4 sm:h-4" />
                             </button>
                           </div>
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="space-y-3 sm:space-y-4">
                           <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-white/70 text-sm">
+                            <div className="flex items-center justify-between mb-1 sm:mb-2">
+                              <span className="text-white/70 text-xs sm:text-sm">
                                 Progress
                               </span>
-                              <span className="text-white text-sm font-medium">
+                              <span className="text-white text-xs sm:text-sm font-medium">
                                 {goal.progress} / {goal.target} {goal.unit}
                               </span>
                             </div>
-                            <div className="w-full bg-white/10 rounded-full h-3">
+                            <div className="w-full bg-white/10 rounded-full h-2 sm:h-3">
                               <div
                                 className={`bg-gradient-to-r ${getProgressColor(
                                   goal.progress,
                                   goal.target
-                                )} h-3 rounded-full transition-all duration-500`}
+                                )} h-2 sm:h-3 rounded-full transition-all duration-500`}
                                 style={{ width: `${progressPercentage}%` }}
                               />
                             </div>
@@ -498,10 +497,13 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                           </div>
 
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Calendar size={16} className="text-white/70" />
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <Calendar
+                                size={14}
+                                className="sm:w-4 sm:h-4 text-white/70"
+                              />
                               <span
-                                className={`text-sm ${
+                                className={`text-xs sm:text-sm ${
                                   isOverdue ? "text-red-400" : "text-white/70"
                                 }`}
                               >
@@ -524,9 +526,9 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                               }
                               min="0"
                               max={goal.target}
-                              className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm w-24"
+                              className="bg-white/10 border border-white/20 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-white text-xs sm:text-sm w-20 sm:w-24"
                             />
-                            <span className="text-white/70 text-sm">
+                            <span className="text-white/70 text-xs sm:text-sm">
                               / {goal.target} {goal.unit}
                             </span>
                           </div>
@@ -547,31 +549,31 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <GlassPanel className="p-6" glow>
-              <h3 className="text-white font-semibold text-lg mb-6 flex items-center gap-2">
-                <Award className="text-yellow-400" size={24} />
+            <GlassPanel className="p-4 sm:p-6" glow>
+              <h3 className="text-white font-semibold text-base sm:text-lg mb-4 sm:mb-6 flex items-center gap-1 sm:gap-2">
+                <Award className="text-yellow-400 h-5 w-5 sm:h-6 sm:w-6" />
                 Completed Goals
               </h3>
 
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {completedGoals.slice(-5).map((goal) => (
                   <div
                     key={goal.id}
-                    className="flex items-center justify-between p-4 bg-green-500/10 border border-green-500/20 rounded-lg"
+                    className="flex items-center justify-between p-3 sm:p-4 bg-green-500/10 border border-green-500/20 rounded-lg"
                   >
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="text-green-400" size={20} />
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <CheckCircle2 className="text-green-400 h-4 w-4 sm:h-5 sm:w-5" />
                       <div>
-                        <div className="text-white font-medium">
+                        <div className="text-white font-medium text-sm sm:text-base">
                           {goal.title}
                         </div>
-                        <div className="text-white/70 text-sm">
+                        <div className="text-white/70 text-xs sm:text-sm">
                           {goal.category}
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-green-400 text-sm font-medium">
+                      <div className="text-green-400 text-xs sm:text-sm font-medium">
                         {goal.target} {goal.unit}
                       </div>
                       <div className="text-white/70 text-xs">
@@ -599,20 +601,23 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-md"
             >
-              <GlassPanel className="p-6 w-full max-w-lg relative">
+              <GlassPanel className="p-4 sm:p-6 relative">
                 <button
                   onClick={() => setEditingGoal(null)}
-                  className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                  className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                 >
-                  <X size={20} className="text-white" />
+                  <X size={18} className="sm:w-5 sm:h-5 text-white" />
                 </button>
-                <h3 className="text-white font-semibold text-2xl mb-4">
+                <h3 className="text-white font-semibold text-xl sm:text-2xl mb-3 sm:mb-4">
                   Edit Goal
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div>
-                    <label className="text-white/70 text-sm">Title</label>
+                    <label className="text-white/70 text-xs sm:text-sm">
+                      Title
+                    </label>
                     <input
                       type="text"
                       value={editingGoal.title}
@@ -622,11 +627,13 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                           title: e.target.value,
                         })
                       }
-                      className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     />
                   </div>
                   <div>
-                    <label className="text-white/70 text-sm">Description</label>
+                    <label className="text-white/70 text-xs sm:text-sm">
+                      Description
+                    </label>
                     <textarea
                       value={editingGoal.description}
                       onChange={(e) =>
@@ -636,12 +643,14 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                         })
                       }
                       rows={3}
-                      className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="text-white/70 text-sm">Category</label>
+                      <label className="text-white/70 text-xs sm:text-sm">
+                        Category
+                      </label>
                       <select
                         value={editingGoal.category}
                         onChange={(e) =>
@@ -650,7 +659,7 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                             category: e.target.value,
                           })
                         }
-                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                       >
                         {categories.map((cat) => (
                           <option key={cat} value={cat} className="bg-gray-800">
@@ -660,7 +669,9 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                       </select>
                     </div>
                     <div>
-                      <label className="text-white/70 text-sm">Priority</label>
+                      <label className="text-white/70 text-xs sm:text-sm">
+                        Priority
+                      </label>
                       <select
                         value={editingGoal.priority}
                         onChange={(e) =>
@@ -672,7 +683,7 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                               | "high",
                           })
                         }
-                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                       >
                         {Object.entries(priorities).map(([key, { label }]) => (
                           <option key={key} value={key} className="bg-gray-800">
@@ -682,9 +693,11 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                       </select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="text-white/70 text-sm">Target</label>
+                      <label className="text-white/70 text-xs sm:text-sm">
+                        Target
+                      </label>
                       <input
                         type="number"
                         value={editingGoal.target}
@@ -695,11 +708,13 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                           })
                         }
                         min="1"
-                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                       />
                     </div>
                     <div>
-                      <label className="text-white/70 text-sm">Unit</label>
+                      <label className="text-white/70 text-xs sm:text-sm">
+                        Unit
+                      </label>
                       <input
                         type="text"
                         value={editingGoal.unit}
@@ -709,12 +724,14 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                             unit: e.target.value,
                           })
                         }
-                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="text-white/70 text-sm">Deadline</label>
+                    <label className="text-white/70 text-xs sm:text-sm">
+                      Deadline
+                    </label>
                     <input
                       type="date"
                       value={editingGoal.deadline.toISOString().split("T")[0]}
@@ -724,19 +741,19 @@ export default function GoalsSection({ onNotification }: GoalsSectionProps) {
                           deadline: new Date(e.target.value),
                         })
                       }
-                      className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     />
                   </div>
-                  <div className="flex gap-4 mt-6">
+                  <div className="flex gap-3 sm:gap-4 mt-4 sm:mt-6">
                     <button
                       onClick={() => setEditingGoal(null)}
-                      className="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 rounded-lg font-medium transition-colors"
+                      className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={updateGoal}
-                      className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white py-3 rounded-lg font-medium transition-colors"
+                      className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white py-2 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base"
                     >
                       Save Changes
                     </button>

@@ -170,7 +170,7 @@ export default function Dashboard() {
         setNotifications((prev) =>
           prev.filter((n) => n.id !== newNotification.id)
         );
-      }, 5000);
+      }, 6000);
     }
   };
 
@@ -192,7 +192,7 @@ export default function Dashboard() {
       // Auto-hide popup after 4 seconds
       setTimeout(() => {
         setShowTodoPopup(false);
-      }, 4000);
+      }, 5000);
     }
   };
 

@@ -53,14 +53,14 @@ export default function MusicComponent() {
     []
   );
 
-const handleSearchInput = useCallback(
-  (term: string) => {
-    if (term.trim().length >= 2 || term.trim().length === 0) {
-      debouncedSearch(term);
-    }
-  },
-  [debouncedSearch]
-);
+  const handleSearchInput = useCallback(
+    (term: string) => {
+      if (term.trim().length >= 2 || term.trim().length === 0) {
+        debouncedSearch(term);
+      }
+    },
+    [debouncedSearch]
+  );
 
   const handleSelectTrack = useCallback((track: Track) => {
     setSelectedTrack(track);
@@ -77,7 +77,7 @@ const handleSearchInput = useCallback(
       {closed && (
         <button
           onClick={() => setClosed(false)}
-          className="fixed bottom-4 right-4 z-50 bg-pink-600 hover:bg-pink-500 text-white p-3 rounded-full shadow-lg transition"
+          className="fixed bottom-4 right-4 z-50 bg-pink-600 hover:bg-pink-500 text-white p-3 rounded-full shadow-lg transition sm:p-3"
           title="Open Music Player"
         >
           <Music size={20} />
@@ -93,7 +93,7 @@ const handleSearchInput = useCallback(
             ${
               minimized
                 ? `w-${logoSize} h-${logoSize} p-1 cursor-pointer`
-                : "w-[450px] p-4 cursor-default"
+                : "w-[90vw] sm:w-[450px] p-3 sm:p-4 cursor-default"
             }
           `}
           onClick={() => {
@@ -104,13 +104,13 @@ const handleSearchInput = useCallback(
           {!minimized && (
             <div className="flex justify-end items-center gap-2 mb-2 select-none w-full">
               {selectedTrack && (
-                <div className="flex items-center gap-2 truncate max-w-[240px] text-white font-semibold text-sm">
+                <div className="flex items-center gap-2 truncate max-w-[160px] sm:max-w-[240px] text-white font-semibold text-xs sm:text-sm">
                   <Image
                     src={selectedTrack.thumbnail}
                     alt={selectedTrack.title}
                     width={24}
                     height={24}
-                    className="w-6 h-6 rounded-lg object-cover"
+                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg object-cover"
                   />
                   <span className="truncate">{selectedTrack.title}</span>
                 </div>
@@ -125,7 +125,7 @@ const handleSearchInput = useCallback(
                 aria-label="Minimize music player"
                 title="Minimize"
               >
-                <Minimize2 size={18} />
+                <Minimize2 size={16} className="sm:w-[18px]" />
               </button>
 
               <button
@@ -137,7 +137,7 @@ const handleSearchInput = useCallback(
                 aria-label="Close music player"
                 title="Close"
               >
-                <X size={18} />
+                <X size={16} className="sm:w-[18px]" />
               </button>
             </div>
           )}
@@ -161,7 +161,7 @@ const handleSearchInput = useCallback(
 
           {/* Minimized Preview */}
           {minimized && (
-            <div className="absolute flex items-center justify-center w-[120px] h-[120px] rounded-full overflow-hidden shadow-lg cursor-pointer select-none">
+            <div className="absolute flex items-center justify-center w-[80px] h-[80px] sm:w-[120px] sm:h-[120px] rounded-full overflow-hidden shadow-lg cursor-pointer select-none">
               {selectedTrack ? (
                 <Image
                   src={selectedTrack.thumbnail}
@@ -174,7 +174,7 @@ const handleSearchInput = useCallback(
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-white bg-gray-700">
-                  <Music size={24} />
+                  <Music size={20} className="sm:w-[24px]" />
                 </div>
               )}
             </div>
@@ -184,9 +184,9 @@ const handleSearchInput = useCallback(
 
       {/* 🔍 Modal for Search Results */}
       {showModal && (
-        <div className="fixed bottom-20 right-4 z-50 w-[360px] max-h-[300px] overflow-hidden rounded-2xl bg-white/10 backdrop-blur-lg border border-white/30 shadow-2xl text-white transition-all duration-300 animate-fade-in">
+        <div className="fixed bottom-20 right-4 z-50 w-[90vw] sm:w-[360px] max-h-[50vh] sm:max-h-[300px] overflow-hidden rounded-2xl bg-white/10 backdrop-blur-lg border border-white/30 shadow-2xl text-white transition-all duration-300 animate-fade-in">
           <div className="p-3 border-b border-white/20 text-center relative">
-            <h2 className="text-lg font-bold">Select a Song</h2>
+            <h2 className="text-base sm:text-lg font-bold">Select a Song</h2>
             <button
               onClick={() => setShowModal(false)}
               className="absolute top-2 right-3 text-xl font-bold text-white hover:text-pink-400 transition"
@@ -196,7 +196,7 @@ const handleSearchInput = useCallback(
             </button>
           </div>
 
-          <div className="max-h-[250px] overflow-y-auto px-3 pb-3">
+          <div className="max-h-[calc(50vh-50px)] sm:max-h-[250px] overflow-y-auto px-3 pb-3">
             {tracks.length === 0 ? (
               <p className="text-gray-300 text-sm text-center mt-6">
                 No songs found.
@@ -214,13 +214,13 @@ const handleSearchInput = useCallback(
                       alt={track.title}
                       width={40}
                       height={40}
-                      className="w-10 h-10 object-cover rounded-lg shadow-sm"
+                      className="w-8 h-8 sm:w-10 sm:h-10 object-cover rounded-lg shadow-sm"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-semibold">
+                      <p className="truncate text-xs sm:text-sm font-semibold">
                         {track.title}
                       </p>
-                      <p className="truncate text-xs text-gray-300">
+                      <p className="truncate text-[10px] sm:text-xs text-gray-300">
                         {track.channel}
                       </p>
                     </div>
