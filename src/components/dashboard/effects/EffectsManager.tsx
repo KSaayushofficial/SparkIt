@@ -1239,7 +1239,7 @@ export default function EffectsManager() {
 
   return (
     <>
-      <style jsx global>{`
+      <style>{`
         @keyframes rain-fall {
           0% {
             transform: translateY(0) translateX(0);

@@ -803,7 +803,7 @@ const applyImageBackground = useCallback(
       </div>
 
       {/* Background CSS Animations */}
-      <style jsx global>{`
+      <style>{`
         @keyframes wave-motion {
           0%,
           100% {
