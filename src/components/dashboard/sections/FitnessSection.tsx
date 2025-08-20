@@ -15,14 +15,9 @@ import {
   Clock,
   Activity,
   Volume2,
+  ChevronLeft,
 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
-
-// interface Notification {
-//   type: "success" | "info" | "warning" | "error";
-//   title: string;
-//   message: string;
-// }
 
 interface FitnessSectionProps {
   onNotification: (notification: any) => void;
@@ -576,7 +571,6 @@ export default function FitnessSection({
 
     const currentStep = selectedExercise.steps[currentStepIndex];
 
-    // Check if there's rest time after this step
     if (currentStep.restAfter && currentStep.restAfter > 0) {
       setIsResting(true);
       setRestTimeRemaining(currentStep.restAfter);
@@ -598,7 +592,6 @@ export default function FitnessSection({
         message: selectedExercise.steps[nextIndex].instruction,
       });
     } else {
-      // Exercise completed
       completeExercise();
     }
   }, [selectedExercise, currentStepIndex, onNotification, completeExercise]);
@@ -743,37 +736,43 @@ export default function FitnessSection({
 
   if (selectedExercise) {
     return (
-      <div className="h-full flex gap-6 overflow-hidden">
+      <div className="h-full flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-hidden">
         {/* Left Side - Exercise Visualization/Video */}
         <div className="flex-1 min-w-0">
-          <GlassPanel className="h-full p-6" glow>
+          <GlassPanel className="h-full p-4 lg:p-6" glow>
             <div className="h-full flex flex-col">
               {/* Exercise Header */}
-              <div className="mb-6 flex-shrink-0">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
+              <div className="mb-4 lg:mb-6 flex-shrink-0">
+                <div className="flex items-center justify-between mb-3 lg:mb-4">
+                  <button
+                    onClick={() => setSelectedExercise(null)}
+                    className="text-white/70 hover:text-white transition-colors flex items-center lg:hidden"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <div className="flex-1 lg:flex-none">
+                    <h2 className="text-xl lg:text-2xl font-bold text-white mb-1 lg:mb-2 text-center lg:text-left">
                       {selectedExercise.name}
                     </h2>
-                    <div className="flex items-center gap-4 text-white/70">
+                    <div className="flex flex-wrap justify-center lg:justify-start items-center gap-2 lg:gap-4 text-white/70 text-xs lg:text-sm">
                       <span className="flex items-center gap-1">
-                        <Timer size={16} />
+                        <Timer size={14} className="lg:size-4" />
                         {formatTime(timeRemaining)}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Activity size={16} />
+                        <Activity size={14} className="lg:size-4" />
                         Step {currentStepIndex + 1} of{" "}
                         {selectedExercise.steps.length}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Zap size={16} />
+                        <Zap size={14} className="lg:size-4" />
                         {selectedExercise.calories} cal
                       </span>
                     </div>
                   </div>
                   <button
                     onClick={() => setSelectedExercise(null)}
-                    className="text-white/70 hover:text-white transition-colors"
+                    className="text-white/70 hover:text-white transition-colors hidden lg:block"
                   >
                     ← Back
                   </button>
@@ -781,7 +780,7 @@ export default function FitnessSection({
               </div>
 
               {/* Visual Representation */}
-              <div className="flex-1 bg-black/20 rounded-lg overflow-hidden mb-6 flex items-center justify-center min-h-0">
+              <div className="flex-1 bg-black/20 rounded-lg overflow-hidden mb-4 lg:mb-6 flex items-center justify-center min-h-[200px] lg:min-h-0">
                 <Image
                   src={selectedExercise.videoUrl}
                   alt={selectedExercise.name}
@@ -796,13 +795,13 @@ export default function FitnessSection({
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-center mb-4 flex-shrink-0"
+                  className="text-center mb-3 lg:mb-4 flex-shrink-0"
                 >
-                  <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
-                    <h3 className="text-yellow-300 font-semibold mb-2">
+                  <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-3 lg:p-4">
+                    <h3 className="text-yellow-300 font-semibold mb-1 lg:mb-2 text-sm lg:text-base">
                       Rest Time
                     </h3>
-                    <div className="text-2xl font-bold text-yellow-200">
+                    <div className="text-xl lg:text-2xl font-bold text-yellow-200">
                       {formatTime(restTimeRemaining)}
                     </div>
                   </div>
@@ -810,62 +809,68 @@ export default function FitnessSection({
               )}
 
               {/* Timer Controls */}
-              <div className="flex items-center justify-center gap-6 mb-4 flex-shrink-0">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white mb-1">
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-3 lg:gap-6 mb-3 lg:mb-4 flex-shrink-0">
+                <div className="text-center order-2 lg:order-1">
+                  <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
                     {formatTime(timeRemaining)}
                   </div>
-                  <div className="text-white/70 text-sm">Total Time</div>
+                  <div className="text-white/70 text-xs lg:text-sm">
+                    Total Time
+                  </div>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-2 lg:gap-3 order-1 lg:order-2">
                   <button
                     onClick={togglePause}
                     disabled={!isActive}
-                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white p-3 rounded-full transition-colors"
+                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white p-2 lg:p-3 rounded-full transition-colors"
                   >
-                    {isPaused ? <Play size={20} /> : <Pause size={20} />}
+                    {isPaused ? <Play size={18} /> : <Pause size={18} />}
                   </button>
                   <button
                     onClick={handleNextStep}
                     disabled={!isActive}
-                    className="bg-green-500 hover:bg-green-600 disabled:bg-gray-500 text-white p-3 rounded-full transition-colors"
+                    className="bg-green-500 hover:bg-green-600 disabled:bg-gray-500 text-white p-2 lg:p-3 rounded-full transition-colors"
                   >
-                    <SkipForward size={20} />
+                    <SkipForward size={18} />
                   </button>
                   <button
                     onClick={resetExercise}
-                    className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-full transition-colors"
+                    className="bg-orange-500 hover:bg-orange-600 text-white p-2 lg:p-3 rounded-full transition-colors"
                   >
-                    <RotateCcw size={20} />
+                    <RotateCcw size={18} />
                   </button>
                 </div>
 
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white mb-1">
+                <div className="text-center order-3">
+                  <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
                     {formatTime(stepTimer)}
                   </div>
-                  <div className="text-white/70 text-sm">Step Timer</div>
+                  <div className="text-white/70 text-xs lg:text-sm">
+                    Step Timer
+                  </div>
                 </div>
               </div>
 
               {/* Duration Controls */}
-              <div className="flex items-center justify-center gap-4 flex-shrink-0">
-                <span className="text-white/70">Step Duration:</span>
+              <div className="flex items-center justify-center gap-2 lg:gap-4 flex-shrink-0 text-sm lg:text-base">
+                <span className="text-white/70 text-xs lg:text-sm">
+                  Step Duration:
+                </span>
                 <button
                   onClick={decreaseDuration}
                   disabled={isActive}
-                  className="bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white px-3 py-1 lg:px-4 lg:py-2 rounded-lg transition-colors text-xs lg:text-sm"
                 >
                   -10s
                 </button>
-                <span className="text-white font-semibold text-lg">
+                <span className="text-white font-semibold text-sm lg:text-lg">
                   {customDuration}s
                 </span>
                 <button
                   onClick={increaseDuration}
                   disabled={isActive}
-                  className="bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white px-3 py-1 lg:px-4 lg:py-2 rounded-lg transition-colors text-xs lg:text-sm"
                 >
                   +10s
                 </button>
@@ -875,50 +880,54 @@ export default function FitnessSection({
         </div>
 
         {/* Right Side - Exercise Instructions and Stats */}
-        <div className="w-96 min-w-0">
-          <div className="h-full flex flex-col gap-6 overflow-hidden">
+        <div className="w-full lg:w-96 min-w-0">
+          <div className="h-full flex flex-col gap-4 lg:gap-6 overflow-hidden">
             {/* Current Step Instructions */}
             {currentStep && (
-              <GlassPanel className="p-6 flex-1 min-h-0" glow>
+              <GlassPanel className="p-4 lg:p-6 flex-1 min-h-0" glow>
                 <div className="h-full flex flex-col overflow-hidden">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex-shrink-0">
+                  <h3 className="text-lg font-semibold text-white mb-3 lg:mb-4 flex-shrink-0">
                     Current Step
                   </h3>
-                  <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                  <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 lg:space-y-4">
+                    <div className="flex items-center gap-3 mb-3 lg:mb-4">
+                      <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1 lg:px-4 lg:py-2 rounded-full text-xs lg:text-sm font-semibold">
                         Step {currentStepIndex + 1} of{" "}
                         {selectedExercise.steps.length}
                       </div>
                       {isActive && (
                         <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-                          <span className="text-green-400 text-sm font-medium">
+                          <div className="w-2 h-2 lg:w-3 lg:h-3 bg-green-400 rounded-full animate-pulse" />
+                          <span className="text-green-400 text-xs lg:text-sm font-medium">
                             Active
                           </span>
                         </div>
                       )}
                     </div>
 
-                    <div className="bg-black/20 rounded-lg p-4 mb-4">
+                    <div className="bg-black/20 rounded-lg p-3 lg:p-4 mb-3 lg:mb-4">
                       <Image
                         src={selectedExercise.imageUrl}
                         alt={`Step ${currentStepIndex + 1}`}
                         width={300}
                         height={128}
-                        className="w-full h-32 object-cover rounded-lg mb-4"
+                        className="w-full h-24 lg:h-32 object-cover rounded-lg mb-3 lg:mb-4"
                       />
-                      <p className="text-white text-base leading-relaxed">
+                      <p className="text-white text-sm lg:text-base leading-relaxed">
                         {currentStep.instruction}
                       </p>
                     </div>
 
                     <div>
-                      <h4 className="text-white font-medium mb-2">Form Tips</h4>
-                      <ul className="text-white/70 text-sm space-y-1">
+                      <h4 className="text-white font-medium mb-1 lg:mb-2 text-sm lg:text-base">
+                        Form Tips
+                      </h4>
+                      <ul className="text-white/70 text-xs lg:text-sm space-y-1 lg:space-y-1">
                         {currentStep.form.map((tip, index) => (
                           <li key={index} className="flex items-start gap-2">
-                            <span className="text-green-400 mt-1">•</span>
+                            <span className="text-green-400 mt-0.5 lg:mt-1">
+                              •
+                            </span>
                             {tip}
                           </li>
                         ))}
@@ -926,33 +935,35 @@ export default function FitnessSection({
                     </div>
 
                     <div>
-                      <h4 className="text-white font-medium mb-2">Breathing</h4>
-                      <p className="text-blue-300 text-sm">
+                      <h4 className="text-white font-medium mb-1 lg:mb-2 text-sm lg:text-base">
+                        Breathing
+                      </h4>
+                      <p className="text-blue-300 text-xs lg:text-sm">
                         {currentStep.breathing}
                       </p>
                     </div>
 
                     <div>
-                      <h4 className="text-white font-medium mb-2">
+                      <h4 className="text-white font-medium mb-1 lg:mb-2 text-sm lg:text-base">
                         Visualization
                       </h4>
-                      <p className="text-purple-300 text-sm italic">
+                      <p className="text-purple-300 text-xs lg:text-sm italic">
                         {currentStep.visualization}
                       </p>
                     </div>
 
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex gap-2 lg:gap-3 pt-3 lg:pt-4">
                       <button
                         onClick={handleNextStep}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-medium text-sm"
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 lg:px-4 lg:py-2 rounded-lg transition-colors flex items-center gap-1 lg:gap-2 font-medium text-xs lg:text-sm"
                       >
-                        <Timer size={14} />
+                        <Timer size={14} className="lg:size-4" />
                         Next Step
                       </button>
 
                       {selectedExercise.audioUrl && (
-                        <button className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-medium text-sm">
-                          <Volume2 size={14} />
+                        <button className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 lg:px-4 lg:py-2 rounded-lg transition-colors flex items-center gap-1 lg:gap-2 font-medium text-xs lg:text-sm">
+                          <Volume2 size={14} className="lg:size-4" />
                           Audio
                         </button>
                       )}
@@ -963,37 +974,43 @@ export default function FitnessSection({
             )}
 
             {/* Stats */}
-            <GlassPanel className="p-6 flex-shrink-0" glow>
-              <h3 className="text-lg font-semibold text-white mb-4">
+            <GlassPanel className="p-4 lg:p-6 flex-shrink-0" glow>
+              <h3 className="text-lg font-semibold text-white mb-3 lg:mb-4">
                 Your Progress
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 lg:gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-400">
+                  <div className="text-xl lg:text-2xl font-bold text-green-400">
                     {completedExercises.length}
                   </div>
-                  <div className="text-white/70 text-sm">Completed</div>
+                  <div className="text-white/70 text-xs lg:text-sm">
+                    Completed
+                  </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-400">
+                  <div className="text-xl lg:text-2xl font-bold text-blue-400">
                     {Math.floor(totalTimeSpent / 60)}m
                   </div>
-                  <div className="text-white/70 text-sm">Total Time</div>
+                  <div className="text-white/70 text-xs lg:text-sm">
+                    Total Time
+                  </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-400">
+                  <div className="text-xl lg:text-2xl font-bold text-purple-400">
                     {currentStreak}
                   </div>
-                  <div className="text-white/70 text-sm">Streak</div>
+                  <div className="text-white/70 text-xs lg:text-sm">Streak</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-400">
+                  <div className="text-xl lg:text-2xl font-bold text-orange-400">
                     {completedExercises.reduce((total, id) => {
                       const exercise = exercises.find((e) => e.id === id);
                       return total + (exercise?.calories || 0);
                     }, 0)}
                   </div>
-                  <div className="text-white/70 text-sm">Calories</div>
+                  <div className="text-white/70 text-xs lg:text-sm">
+                    Calories
+                  </div>
                 </div>
               </div>
             </GlassPanel>
@@ -1005,24 +1022,24 @@ export default function FitnessSection({
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="max-w-6xl mx-auto space-y-6 p-4">
+      <div className="max-w-6xl mx-auto space-y-4 lg:space-y-6 p-3 lg:p-4">
         {/* Header */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="text-center"
         >
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent mb-1 lg:mb-2">
             Fitness Training Center
           </h1>
-          <p className="text-white/70">
+          <p className="text-white/70 text-sm lg:text-base">
             Professional guided workouts with step-by-step instructions and
             real-time coaching
           </p>
         </motion.div>
 
         {/* Category Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 lg:gap-4 mb-6 lg:mb-8">
           {Object.entries(categoryColors).map(([category, color]) => {
             const exerciseCount = exercises.filter(
               (exercise) => exercise.category === category
@@ -1035,13 +1052,13 @@ export default function FitnessSection({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <GlassPanel className="p-4 text-center" glow>
+                <GlassPanel className="p-3 lg:p-4 text-center" glow>
                   <div
-                    className={`w-12 h-12 mx-auto mb-3 bg-gradient-to-r ${color} rounded-full flex items-center justify-center`}
+                    className={`w-10 h-10 lg:w-12 lg:h-12 mx-auto mb-2 lg:mb-3 bg-gradient-to-r ${color} rounded-full flex items-center justify-center`}
                   >
-                    <Dumbbell className="text-white" size={20} />
+                    <Dumbbell className="text-white size-4 lg:size-5" />
                   </div>
-                  <h3 className="text-white font-semibold capitalize mb-1 text-sm">
+                  <h3 className="text-white font-semibold capitalize mb-1 text-xs lg:text-sm">
                     {category}
                   </h3>
                   <p className="text-white/70 text-xs">
@@ -1067,17 +1084,17 @@ export default function FitnessSection({
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
           >
-            <GlassPanel className="p-6" glow>
-              <h3 className="text-white font-semibold mb-4 capitalize flex items-center gap-2">
+            <GlassPanel className="p-4 lg:p-6" glow>
+              <h3 className="text-white font-semibold mb-3 lg:mb-4 capitalize flex items-center gap-2 text-sm lg:text-base">
                 <div
-                  className={`w-8 h-8 bg-gradient-to-r ${
+                  className={`w-6 h-6 lg:w-8 lg:h-8 bg-gradient-to-r ${
                     categoryColors[category as keyof typeof categoryColors]
                   } rounded-full`}
                 />
                 {category} Training
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                 {categoryExercises.map((exercise) => {
                   const isCompleted = completedExercises.includes(exercise.id);
 
@@ -1085,7 +1102,7 @@ export default function FitnessSection({
                     <motion.div
                       key={exercise.id}
                       whileHover={{ scale: 1.02 }}
-                      className={`p-4 rounded-lg border transition-all ${
+                      className={`p-3 lg:p-4 rounded-lg border transition-all ${
                         isCompleted
                           ? "bg-green-500/10 border-green-500/30"
                           : "bg-white/5 border-white/10 hover:bg-white/10"
@@ -1093,47 +1110,44 @@ export default function FitnessSection({
                     >
                       <div className="flex flex-col h-full">
                         {/* Exercise Image */}
-                        <div className="bg-black/20 rounded-lg overflow-hidden mb-4">
+                        <div className="bg-black/20 rounded-lg overflow-hidden mb-3 lg:mb-4">
                           <Image
                             src={exercise.imageUrl}
                             alt={exercise.name}
                             width={300}
                             height={128}
-                            className="w-full h-32 object-cover"
+                            className="w-full h-24 lg:h-32 object-cover"
                           />
                         </div>
 
                         {/* Exercise Info */}
-                        <div className="flex items-center gap-3 mb-3">
+                        <div className="flex items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
                           <div
-                            className={`w-10 h-10 bg-gradient-to-r ${
+                            className={`w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-r ${
                               categoryColors[exercise.category]
                             } rounded-full flex items-center justify-center`}
                           >
-                            <Dumbbell className="text-white" size={16} />
+                            <Dumbbell className="text-white size-3 lg:size-4" />
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium text-white">
+                            <div className="flex items-center gap-1 lg:gap-2">
+                              <h4 className="font-medium text-white text-sm lg:text-base">
                                 {exercise.name}
                               </h4>
                               {isCompleted && (
-                                <CheckCircle
-                                  className="text-green-400"
-                                  size={16}
-                                />
+                                <CheckCircle className="text-green-400 size-3 lg:size-4" />
                               )}
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-white/70">
+                            <div className="flex items-center gap-2 lg:gap-4 text-xs lg:text-sm text-white/70">
                               <span className="flex items-center gap-1">
-                                <Clock size={12} />
+                                <Clock size={10} className="lg:size-3" />
                                 {Math.floor(exercise.duration / 60)}m
                               </span>
                               <span className="flex items-center gap-1">
-                                <Zap size={12} />
+                                <Zap size={10} className="lg:size-3" />
                                 {exercise.calories} cal
                               </span>
-                              <span className="capitalize">
+                              <span className="capitalize text-xs">
                                 {exercise.difficulty}
                               </span>
                             </div>
@@ -1141,17 +1155,17 @@ export default function FitnessSection({
                         </div>
 
                         {/* Benefits Preview */}
-                        <div className="flex-1 mb-4">
-                          <div className="space-y-2">
+                        <div className="flex-1 mb-3 lg:mb-4">
+                          <div className="space-y-1 lg:space-y-2">
                             {exercise.benefits
                               .slice(0, 2)
                               .map((benefit, idx) => (
                                 <div
                                   key={idx}
-                                  className="flex items-center gap-2"
+                                  className="flex items-center gap-1 lg:gap-2"
                                 >
-                                  <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0" />
-                                  <span className="text-white/80 text-sm">
+                                  <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-green-400 rounded-full flex-shrink-0" />
+                                  <span className="text-white/80 text-xs lg:text-sm">
                                     {benefit}
                                   </span>
                                 </div>
@@ -1165,7 +1179,7 @@ export default function FitnessSection({
                         </div>
 
                         {/* Target Muscles */}
-                        <div className="mb-4">
+                        <div className="mb-3 lg:mb-4">
                           <div className="text-xs text-white/60 mb-1">
                             Target Muscles:
                           </div>
@@ -1177,7 +1191,7 @@ export default function FitnessSection({
 
                         {/* Equipment */}
                         {exercise.equipment.length > 0 && (
-                          <div className="mb-4">
+                          <div className="mb-3 lg:mb-4">
                             <div className="text-xs text-white/60 mb-1">
                               Equipment:
                             </div>
@@ -1185,7 +1199,7 @@ export default function FitnessSection({
                               {exercise.equipment.map((item, idx) => (
                                 <span
                                   key={idx}
-                                  className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs"
+                                  className="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 lg:px-2 lg:py-1 rounded text-xs"
                                 >
                                   {item}
                                 </span>
@@ -1199,9 +1213,9 @@ export default function FitnessSection({
                           onClick={() => startExercise(exercise)}
                           className={`w-full bg-gradient-to-r ${
                             categoryColors[exercise.category]
-                          } hover:opacity-90 text-white py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-semibold shadow-lg`}
+                          } hover:opacity-90 text-white py-2 lg:py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-1 lg:gap-2 font-semibold text-xs lg:text-sm shadow-lg`}
                         >
-                          <Play size={16} />
+                          <Play size={14} className="lg:size-4" />
                           Start Exercise
                         </button>
                       </div>

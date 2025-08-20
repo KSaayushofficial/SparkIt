@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image"; // Import the Next.js Image component
+import Image from "next/image";
 import {
   Play,
   Pause,
@@ -14,12 +14,10 @@ import {
   Timer,
   Volume2,
   SkipForward,
+  ChevronLeft,
 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 
-
-
-// Update the props interface to use the new Notification type
 interface StressSectionProps {
   onNotification: (notification: any) => void;
 }
@@ -357,113 +355,120 @@ export default function StressSection({ onNotification }: StressSectionProps) {
 
   if (selectedActivity) {
     return (
-      <div className="h-full flex gap-6 overflow-hidden">
+      <div className="h-full flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-hidden">
         {/* Video/Visual Side */}
         <div className="flex-1 min-w-0">
-          <GlassPanel className="h-full p-6" glow>
+          <GlassPanel className="h-full p-4 lg:p-6" glow>
             <div className="h-full flex flex-col">
               {/* Header */}
-              <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">
+              <div className="flex items-center justify-between mb-4 lg:mb-6 flex-shrink-0">
+                <div className="flex-1">
+                  <h2 className="text-xl lg:text-2xl font-bold text-white mb-1 text-center lg:text-left">
                     {selectedActivity.name}
                   </h2>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-center lg:justify-start">
                     <div
-                      className={`w-3 h-3 rounded-full bg-gradient-to-r ${
+                      className={`w-2 h-2 lg:w-3 lg:h-3 rounded-full bg-gradient-to-r ${
                         categoryColors[selectedActivity.category]
                       }`}
                     />
-                    <span className="text-white/70 capitalize">
+                    <span className="text-white/70 capitalize text-sm lg:text-base">
                       {selectedActivity.category} Practice
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedActivity(null)}
-                  className="text-white/70 hover:text-white transition-colors"
+                  className="text-white/70 hover:text-white transition-colors flex items-center lg:ml-4"
                 >
-                  ← Back
+                  <ChevronLeft size={20} className="lg:mr-1" />
+                  <span className="hidden lg:inline">Back</span>
                 </button>
               </div>
 
-              {/* Visual Guide - Now using Next.js Image component */}
-              <div className="flex-1 bg-black/20 rounded-lg overflow-hidden mb-4 flex items-center justify-center min-h-0">
+              {/* Visual Guide */}
+              <div className="bg-black/20 rounded-lg overflow-hidden mb-4 lg:mb-6 flex items-center justify-center h-40 sm:h-48 lg:h-56">
                 <Image
                   src={selectedActivity.videoUrl || "/placeholder.svg"}
                   alt={selectedActivity.name}
                   className="w-full h-full object-cover rounded-lg"
-                  width={400} // Specify width
-                  height={300} // Specify height
+                  width={400}
+                  height={300}
                 />
               </div>
 
               {/* Timer Controls */}
-              <div className="flex items-center justify-center gap-6 mb-4 flex-shrink-0">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white mb-1">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 lg:gap-6 mb-4 lg:mb-6 flex-shrink-0">
+                <div className="text-center order-2 sm:order-1">
+                  <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
                     {formatTime(timeRemaining)}
                   </div>
-                  <div className="text-white/70 text-sm">Total Time</div>
+                  <div className="text-white/70 text-xs lg:text-sm">
+                    Total Time
+                  </div>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-2 lg:gap-3 order-1 sm:order-2">
                   {!isActive ? (
                     <button
                       onClick={resumeActivity}
-                      className="bg-green-500 hover:bg-green-600 text-white p-4 rounded-full transition-colors shadow-lg"
+                      className="bg-green-500 hover:bg-green-600 text-white p-3 lg:p-4 rounded-full transition-colors shadow-lg"
                     >
-                      <Play size={24} />
+                      <Play size={18} className="lg:size-6" />
                     </button>
                   ) : (
                     <button
                       onClick={pauseActivity}
-                      className="bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full transition-colors shadow-lg"
+                      className="bg-orange-500 hover:bg-orange-600 text-white p-3 lg:p-4 rounded-full transition-colors shadow-lg"
                     >
-                      <Pause size={24} />
+                      <Pause size={18} className="lg:size-6" />
                     </button>
                   )}
 
                   <button
                     onClick={resetActivity}
-                    className="bg-gray-500 hover:bg-gray-600 text-white p-4 rounded-full transition-colors shadow-lg"
+                    className="bg-gray-500 hover:bg-gray-600 text-white p-3 lg:p-4 rounded-full transition-colors shadow-lg"
                   >
-                    <RotateCcw size={24} />
+                    <RotateCcw size={18} className="lg:size-6" />
                   </button>
 
                   <button
                     onClick={nextStep}
-                    className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full transition-colors shadow-lg"
+                    className="bg-blue-500 hover:bg-blue-600 text-white p-3 lg:p-4 rounded-full transition-colors shadow-lg"
                   >
-                    <SkipForward size={24} />
+                    <SkipForward size={18} className="lg:size-6" />
                   </button>
                 </div>
 
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white mb-1">
+                <div className="text-center order-3">
+                  <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
                     {formatTime(stepTimer)}
                   </div>
-                  <div className="text-white/70 text-sm">Step Timer</div>
+                  <div className="text-white/70 text-xs lg:text-sm">
+                    Step Timer
+                  </div>
                 </div>
               </div>
 
               {/* Duration Controls */}
-              <div className="flex items-center justify-center gap-4 flex-shrink-0">
-                <span className="text-white/70">Step Duration:</span>
+              <div className="flex items-center justify-center gap-2 lg:gap-4 flex-shrink-0 text-sm lg:text-base">
+                <span className="text-white/70 text-xs lg:text-sm hidden sm:inline">
+                  Step Duration:
+                </span>
                 <button
                   onClick={decreaseDuration}
                   disabled={isActive}
-                  className="bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white px-2 py-1 sm:px-3 sm:py-1 lg:px-4 lg:py-2 rounded-lg transition-colors text-xs lg:text-sm"
                 >
                   -10s
                 </button>
-                <span className="text-white font-semibold text-lg">
+                <span className="text-white font-semibold text-sm lg:text-lg">
                   {customDuration}s
                 </span>
                 <button
                   onClick={increaseDuration}
                   disabled={isActive}
-                  className="bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white px-2 py-1 sm:px-3 sm:py-1 lg:px-4 lg:py-2 rounded-lg transition-colors text-xs lg:text-sm"
                 >
                   +10s
                 </button>
@@ -473,51 +478,50 @@ export default function StressSection({ onNotification }: StressSectionProps) {
         </div>
 
         {/* Instructions Side */}
-        <div className="flex-1 min-w-0">
-          <GlassPanel className="h-full p-6" glow>
+        <div className="w-full lg:w-96 min-w-0">
+          <GlassPanel className="h-full p-4 lg:p-6" glow>
             <div className="h-full flex flex-col overflow-hidden">
               {/* Current Step */}
-              <div className="mb-6 flex-shrink-0">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+              <div className="mb-4 lg:mb-6 flex-shrink-0">
+                <div className="flex items-center gap-3 mb-3 lg:mb-4">
+                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 lg:px-4 lg:py-2 rounded-full text-xs lg:text-sm font-semibold">
                     Step {currentStep + 1} of {selectedActivity.steps.length}
                   </div>
                   {isActive && (
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-                      <span className="text-green-400 text-sm font-medium">
+                      <div className="w-2 h-2 lg:w-3 lg:h-3 bg-green-400 rounded-full animate-pulse" />
+                      <span className="text-green-400 text-xs lg:text-sm font-medium">
                         Active
                       </span>
                     </div>
                   )}
                 </div>
 
-                <div className="bg-black/20 rounded-lg p-6 mb-4">
-                  {/* Image tag replaced with Next.js Image component */}
+                <div className="bg-black/20 rounded-lg p-4 lg:p-6 mb-3 lg:mb-4">
                   <Image
                     src={selectedActivity.imageUrl || "/placeholder.svg"}
                     alt={`Step ${currentStep + 1}`}
-                    className="w-full h-48 object-cover rounded-lg mb-4"
-                    width={300} // Specify width
-                    height={200} // Specify height
+                    className="w-full h-32 lg:h-48 object-cover rounded-lg mb-3 lg:mb-4"
+                    width={300}
+                    height={200}
                   />
-                  <p className="text-white text-lg leading-relaxed">
+                  <p className="text-white text-sm lg:text-base lg:text-lg leading-relaxed">
                     {selectedActivity.steps[currentStep]}
                   </p>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-2 lg:gap-3">
                   <button
                     onClick={nextStep}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2 font-medium"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 lg:px-4 lg:py-3 rounded-lg transition-colors flex items-center gap-1 lg:gap-2 font-medium text-xs lg:text-sm"
                   >
-                    <Timer size={16} />
+                    <Timer size={14} className="lg:size-4" />
                     Next Step
                   </button>
 
                   {selectedActivity.audioUrl && (
-                    <button className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2 font-medium">
-                      <Volume2 size={16} />
+                    <button className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 lg:px-4 lg:py-3 rounded-lg transition-colors flex items-center gap-1 lg:gap-2 font-medium text-xs lg:text-sm">
+                      <Volume2 size={14} className="lg:size-4" />
                       Audio Guide
                     </button>
                   )}
@@ -525,8 +529,8 @@ export default function StressSection({ onNotification }: StressSectionProps) {
               </div>
 
               {/* Progress Indicator */}
-              <div className="mb-6 flex-shrink-0">
-                <div className="flex justify-between text-sm text-white/70 mb-2">
+              <div className="mb-4 lg:mb-6 flex-shrink-0">
+                <div className="flex justify-between text-xs lg:text-sm text-white/70 mb-2">
                   <span>Session Progress</span>
                   <span>
                     {Math.round(
@@ -537,9 +541,9 @@ export default function StressSection({ onNotification }: StressSectionProps) {
                     %
                   </span>
                 </div>
-                <div className="w-full bg-white/10 rounded-full h-3">
+                <div className="w-full bg-white/10 rounded-full h-2 lg:h-3">
                   <motion.div
-                    className="bg-gradient-to-r from-green-400 to-blue-400 h-3 rounded-full"
+                    className="bg-gradient-to-r from-green-400 to-blue-400 h-2 lg:h-3 rounded-full"
                     initial={{ width: 0 }}
                     animate={{
                       width: `${
@@ -555,20 +559,22 @@ export default function StressSection({ onNotification }: StressSectionProps) {
 
               {/* Benefits */}
               <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-                <h3 className="text-lg font-semibold text-white mb-4">
+                <h3 className="text-lg font-semibold text-white mb-3 lg:mb-4">
                   Benefits of This Practice
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2 lg:space-y-3">
                   {selectedActivity.benefits.map((benefit, index) => (
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="flex items-center gap-3"
+                      className="flex items-center gap-2 lg:gap-3"
                     >
-                      <div className="w-3 h-3 bg-green-400 rounded-full flex-shrink-0" />
-                      <span className="text-white/90">{benefit}</span>
+                      <div className="w-2 h-2 lg:w-3 lg:h-3 bg-green-400 rounded-full flex-shrink-0" />
+                      <span className="text-white/90 text-sm lg:text-base">
+                        {benefit}
+                      </span>
                     </motion.div>
                   ))}
                 </div>
@@ -582,23 +588,23 @@ export default function StressSection({ onNotification }: StressSectionProps) {
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="max-w-6xl mx-auto space-y-6 p-4">
+      <div className="max-w-6xl mx-auto space-y-4 lg:space-y-6 p-3 lg:p-4">
         {/* Header */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="text-center"
+          className="text-center px-2 sm:px-0"
         >
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent mb-1 lg:mb-2">
             Wellness & Stress Management Center
           </h1>
-          <p className="text-white/70">
+          <p className="text-white/70 text-sm lg:text-base">
             Guided practices for mental wellness, stress relief, and mindfulness
           </p>
         </motion.div>
 
         {/* Category Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4 mb-4 sm:mb-6 lg:mb-8">
           {Object.entries(categoryColors).map(([category, color]) => {
             const Icon = categoryIcons[category as keyof typeof categoryIcons];
             const activityCount = activities.filter(
@@ -612,16 +618,16 @@ export default function StressSection({ onNotification }: StressSectionProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <GlassPanel className="p-4 text-center" glow>
+                <GlassPanel className="p-3 lg:p-4 text-center" glow>
                   <div
-                    className={`w-12 h-12 mx-auto mb-3 bg-gradient-to-r ${color} rounded-full flex items-center justify-center`}
+                    className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mx-auto mb-1 sm:mb-2 lg:mb-3 bg-gradient-to-r ${color} rounded-full flex items-center justify-center`}
                   >
-                    <Icon className="text-white" size={24} />
+                    <Icon className="text-white size-4 sm:size-5 lg:size-6" />
                   </div>
-                  <h3 className="text-white font-semibold capitalize mb-1">
+                  <h3 className="text-white font-semibold capitalize mb-1 text-xs sm:text-sm lg:text-base">
                     {category}
                   </h3>
-                  <p className="text-white/70 text-sm">
+                  <p className="text-white/70 text-xs">
                     {activityCount} practices
                   </p>
                 </GlassPanel>
@@ -631,7 +637,7 @@ export default function StressSection({ onNotification }: StressSectionProps) {
         </div>
 
         {/* Activities Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {activities.map((activity, index) => {
             const Icon = categoryIcons[activity.category];
 
@@ -642,33 +648,33 @@ export default function StressSection({ onNotification }: StressSectionProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <GlassPanel className="p-6 h-full" glow>
+                <GlassPanel className="p-4 lg:p-6 h-full" glow>
                   <div className="flex flex-col h-full">
-                    {/* Activity Image - Now using Next.js Image component */}
-                    <div className="bg-black/20 rounded-lg overflow-hidden mb-4">
+                    {/* Activity Image */}
+                    <div className="bg-black/20 rounded-lg overflow-hidden mb-3 lg:mb-4">
                       <Image
                         src={activity.imageUrl || "/placeholder.svg"}
                         alt={activity.name}
-                        className="w-full h-32 object-cover"
-                        width={300} // Specify width
-                        height={128} // Specify height
+                        className="w-full h-28 sm:h-32 lg:h-40 object-cover"
+                        width={300}
+                        height={128}
                       />
                     </div>
 
                     {/* Activity Info */}
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 lg:mb-4">
                       <div
-                        className={`w-10 h-10 bg-gradient-to-r ${
+                        className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gradient-to-r ${
                           categoryColors[activity.category]
                         } rounded-full flex items-center justify-center`}
                       >
-                        <Icon className="text-white" size={18} />
+                        <Icon className="text-white size-3 sm:size-4 lg:size-5" />
                       </div>
-                      <div>
-                        <h3 className="text-white font-semibold">
+                      <div className="flex-1">
+                        <h3 className="text-white font-semibold text-sm sm:text-base lg:text-lg">
                           {activity.name}
                         </h3>
-                        <p className="text-white/70 text-sm capitalize">
+                        <p className="text-white/70 text-xs sm:text-sm capitalize">
                           {activity.category} •{" "}
                           {Math.floor(activity.duration / 60)} min
                         </p>
@@ -676,12 +682,12 @@ export default function StressSection({ onNotification }: StressSectionProps) {
                     </div>
 
                     {/* Benefits Preview */}
-                    <div className="flex-1 mb-4">
-                      <div className="space-y-2">
+                    <div className="flex-1 mb-3 lg:mb-4">
+                      <div className="space-y-1 lg:space-y-2">
                         {activity.benefits.slice(0, 2).map((benefit, idx) => (
                           <div key={idx} className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0" />
-                            <span className="text-white/80 text-sm">
+                            <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-green-400 rounded-full flex-shrink-0" />
+                            <span className="text-white/80 text-xs sm:text-sm">
                               {benefit}
                             </span>
                           </div>
@@ -699,9 +705,9 @@ export default function StressSection({ onNotification }: StressSectionProps) {
                       onClick={() => startActivity(activity)}
                       className={`w-full bg-gradient-to-r ${
                         categoryColors[activity.category]
-                      } hover:opacity-90 text-white py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-semibold shadow-lg`}
+                      } hover:opacity-90 text-white py-2 sm:py-3 lg:py-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-1 lg:gap-2 font-semibold text-xs lg:text-sm shadow-lg`}
                     >
-                      <Play size={16} />
+                      <Play size={14} className="sm:size-4 lg:size-5" />
                       Start Practice
                     </button>
                   </div>

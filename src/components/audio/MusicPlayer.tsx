@@ -133,7 +133,10 @@ export default function MusicPlayer({
                       style={{
                         animationPlayState:
                           title.length > 28 ? "running" : "paused",
-                        animationDuration: `${Math.min(title.length / 5, 12)}s`,
+                        animation: `${Math.min(
+                          title.length / 5,
+                          12
+                        )}s scrollLeftThenReturn linear infinite`,
                       }}
                     >
                       <span className="animated-text text-sm sm:text-base">
@@ -199,7 +202,6 @@ export default function MusicPlayer({
         .animated-title-container {
           display: inline-block;
           white-space: nowrap;
-          animation-name: scrollLeftThenReturn;
           animation-timing-function: linear;
           animation-iteration-count: infinite;
         }

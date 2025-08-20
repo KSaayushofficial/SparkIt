@@ -23,6 +23,7 @@ interface AmbientSound {
   name: string;
   color: string;
   duration: number; // seconds
+  audioSrc: string;
 }
 
 const ambientSounds: AmbientSound[] = [
@@ -31,72 +32,84 @@ const ambientSounds: AmbientSound[] = [
     name: "Rain Sounds",
     color: "from-blue-500 to-indigo-500",
     duration: 180,
+    audioSrc: "/rain.mp3",
   },
   {
     id: "ocean",
     name: "Ocean Waves",
     color: "from-cyan-500 to-blue-500",
     duration: 240,
+    audioSrc: "/ocean.mp3",
   },
   {
     id: "forest",
     name: "Forest Birds",
     color: "from-green-500 to-teal-500",
     duration: 200,
+    audioSrc: "/forest.mp3",
   },
   {
     id: "thunder",
     name: "Thunder Storm",
     color: "from-purple-500 to-indigo-500",
     duration: 300,
+    audioSrc: "/thunder.mp3",
   },
   {
     id: "fire",
     name: "Crackling Fire",
     color: "from-orange-500 to-red-500",
     duration: 220,
+    audioSrc: "/fire.mp3",
   },
   {
     id: "wind",
     name: "Wind Chimes",
     color: "from-teal-500 to-cyan-500",
     duration: 160,
+    audioSrc: "/wind.mp3",
   },
   {
     id: "cafe",
     name: "Coffee Shop",
     color: "from-amber-500 to-orange-500",
     duration: 280,
+    audioSrc: "/cafe.mp3",
   },
   {
     id: "library",
     name: "Library Ambience",
     color: "from-gray-500 to-slate-500",
     duration: 320,
+    audioSrc: "/library.mp3",
   },
   {
     id: "night",
     name: "Night Crickets",
     color: "from-indigo-500 to-purple-500",
     duration: 190,
+    audioSrc: "/night.mp3",
   },
   {
     id: "meditation",
     name: "Meditation Bells",
     color: "from-pink-500 to-purple-500",
     duration: 150,
+    audioSrc: "/meditation.mp3",
   },
   {
     id: "waterfall",
     name: "Waterfall",
     color: "from-blue-400 to-cyan-400",
     duration: 210,
+    audioSrc: "/waterfall.mp3",
   },
   {
     id: "birds",
     name: "Morning Birds",
     color: "from-yellow-500 to-green-500",
     duration: 170,
+    audioSrc: "/birds.mp3",
   },
 ];
 
@@ -114,6 +127,40 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
     ambientSounds.find((sound) => sound.id === currentTrack) ||
     ambientSounds[0];
 
+  // Initialize audio element
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      audioRef.current = new Audio(currentSound.audioSrc);
+      audioRef.current.volume = volume;
+
+      const updateTime = () => {
+        if (audioRef.current) {
+          setCurrentTime(audioRef.current.currentTime);
+        }
+      };
+
+      audioRef.current.addEventListener("timeupdate", updateTime);
+
+      const handleEnded = () => {
+        if (isRepeating) {
+          audioRef.current?.play();
+        } else {
+          playNext();
+        }
+      };
+
+      audioRef.current.addEventListener("ended", handleEnded);
+
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.removeEventListener("timeupdate", updateTime);
+          audioRef.current.removeEventListener("ended", handleEnded);
+        }
+      };
+    }
+  }, [currentSound.audioSrc, isRepeating]);
+
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume;
@@ -121,17 +168,34 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
   }, [volume, isMuted]);
 
   const playTrack = useCallback(
-    (trackId: string) => {
-      setCurrentTrack(trackId);
-      setCurrentTime(0);
-      setIsPlaying(true);
-      onNotification({
-        title: "Now Playing",
-        message: ambientSounds.find((s) => s.id === trackId)?.name || "",
-        type: "info",
-      });
+    async (trackId: string) => {
+      const sound =
+        ambientSounds.find((s) => s.id === trackId) || ambientSounds[0];
+
+      if (audioRef.current) {
+        // Pause current audio if playing
+        audioRef.current.pause();
+
+        // Create new audio element
+        audioRef.current = new Audio(sound.audioSrc);
+        audioRef.current.volume = isMuted ? 0 : volume;
+
+        try {
+          await audioRef.current.play();
+          setCurrentTrack(trackId);
+          setIsPlaying(true);
+          onNotification({
+            title: "Now Playing",
+            message: sound.name,
+            type: "info",
+          });
+        } catch (err) {
+          console.error("Error playing audio:", err);
+          setIsPlaying(false);
+        }
+      }
     },
-    [onNotification]
+    [onNotification, isMuted, volume]
   );
 
   const playNext = useCallback(() => {
@@ -149,38 +213,26 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
     playTrack(ambientSounds[nextIndex].id);
   }, [currentTrack, isShuffled, playTrack]);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setCurrentTime((prev) => {
-          if (prev >= currentSound.duration) {
-            if (isRepeating) {
-              return 0;
-            } else {
-              playNext();
-              return 0;
-            }
-          }
-          return prev + 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying, currentSound, isRepeating, playNext]);
+  const togglePlay = async () => {
+    if (!audioRef.current) return;
 
-  const togglePlay = () => {
-    setIsPlaying((prev) => {
-      const newState = !prev;
-      if (newState) {
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      try {
+        await audioRef.current.play();
+        setIsPlaying(true);
         onNotification({
           title: "Now Playing",
           message: currentSound.name,
           type: "info",
         });
+      } catch (err) {
+        console.error("Error playing audio:", err);
+        setIsPlaying(false);
       }
-      return newState;
-    });
+    }
   };
 
   const playPrevious = () => {
@@ -194,8 +246,16 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const seekTime = parseFloat(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.currentTime = seekTime;
+      setCurrentTime(seekTime);
+    }
   };
 
   return (
@@ -342,16 +402,15 @@ export default function MusicSection({ onNotification }: MusicSectionProps) {
                       <span>{formatTime(currentTime)}</span>
                       <span>{formatTime(currentSound.duration)}</span>
                     </div>
-                    <div className="h-1.5 sm:h-2 bg-white/10 rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
-                        style={{
-                          width: `${
-                            (currentTime / currentSound.duration) * 100
-                          }%`,
-                        }}
-                      />
-                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max={currentSound.duration}
+                      step="0.1"
+                      value={currentTime}
+                      onChange={handleSeek}
+                      className="w-full h-1.5 sm:h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-blue-500 [&::-webkit-slider-thumb]:to-cyan-500"
+                    />
                   </div>
 
                   {/* Controls */}
